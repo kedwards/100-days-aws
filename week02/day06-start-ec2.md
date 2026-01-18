@@ -19,7 +19,8 @@ aws ec2 create-keypair help
 aws ec2 run-instances help
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
 
 ```bash
 key_name=nautilus-kp
@@ -52,7 +53,9 @@ aws ec2 run-instances \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]"
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
 
 ```bash
 aws ec2 describe-instances \
@@ -150,3 +153,5 @@ else
   fi
 fi
 ```
+
+</details>

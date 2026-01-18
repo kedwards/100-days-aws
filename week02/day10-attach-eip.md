@@ -12,7 +12,8 @@ aws ec2 describe-addresses help
 aws ec2 associate-address help
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
 
 ```bash
 instance_name=devops-ec2
@@ -33,7 +34,9 @@ aws ec2 associate-address \
   --instance-id "$instance_id"
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
 
 ```bash
 aws ec2 describe-addresses --filters "Name=tag:Name,Values=$eip_name" \
@@ -82,4 +85,6 @@ else
   fi
 fi
 ```
+
+</details>
 
