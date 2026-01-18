@@ -19,7 +19,7 @@ subnet_name=devops-subnet
 
 read -r vpc_id cidr_block < <(aws ec2 describe-vpcs \
     --query "Vpcs[?IsDefault].[VpcId,CidrBlock]" \
-    --output text)
+    --output text) && echo "VPC ID: $vpc_id, CIDR Block: $cidr_block"
 
 aws ec2 describe-subnets \
   --filters "Name=vpc-id,Values=$vpc_id" \
@@ -43,7 +43,7 @@ aws ec2 describe-subnets --filters "Name=tag:Name,Values=$subnet_name" \
 read -r subnet_id name vpc < <(aws ec2 describe-subnets \
   --filters "Name=tag:Name,Values=$subnet_name" \
   --query "Subnets[0].[SubnetId,Tags[?Key=='Name'].Value|[0],VpcId]" \
-  --output text)
+  --output text) && echo "Subnet ID: $subnet_id, Name: $name, VPC: $vpc"
 
 subnet_exists=false
 name_valid=false

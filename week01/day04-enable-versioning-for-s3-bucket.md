@@ -30,7 +30,7 @@ aws s3api get-bucket-versioning --bucket $bucket_name \
 ```
 
 ```bash
-read -r status < <(aws s3api get-bucket-versioning --bucket $bucket_name --query Status --output text)
+read -r status < <(aws s3api get-bucket-versioning --bucket $bucket_name --query Status --output text) && echo "Versioning status: $status"
 
 versioning_valid=false
 [[ "$status" == "Enabled" ]] && versioning_valid=true

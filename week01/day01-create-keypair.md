@@ -1,4 +1,4 @@
-# Day 01 - Create Keypair
+# Day 1: Create Key Pair
 
 ## Task
 
@@ -31,8 +31,10 @@ aws ec2 describe-key-pairs --filters "Name=key-name,Values=$key_name" \
 ```
 
 ```bash
-read -r name type < <(aws ec2 describe-key-pairs --filter "Name=key-name,Values=$key_name" \
-    --query "KeyPairs[0].[KeyName,KeyType]" --output text)
+read -r name type < <(aws ec2 describe-key-pairs \
+  --filter "Name=key-name,Values=$key_name" \
+  --query "KeyPairs[0].[KeyName,KeyType]" \
+  --output text) && echo "Key name: $name, Key type: $type"
 
 name_valid=false
 type_valid=false

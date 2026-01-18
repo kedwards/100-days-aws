@@ -24,14 +24,16 @@ aws ec2 authorize-security-group-ingress help
 group_name="nautilus-sg"
 description="Security group for Nautilus App Servers"
 
-read -r vpc_id < <(aws ec2 describe-vpcs --query "Vpcs[?IsDefault].VpcId" --output text)
+read -r vpc_id < <(aws ec2 describe-vpcs \
+  --query "Vpcs[?IsDefault].VpcId" \
+  --output text) && echo "Default VPC ID: $vpc_id"
 
 read -r group_id < <(aws ec2 create-security-group \
   --description "$description" \
   --group-name "$group_name" \
   --vpc-id "$vpc_id" \
   --query GroupId \
-  --output text)
+  --output text) && echo "Created Security Group ID: $group_id"
 
 aws ec2 authorize-security-group-ingress \
   --group-id "$group_id" \
@@ -51,9 +53,10 @@ aws ec2 describe-security-group-rules --filters "Name=group-id,Values=$group_id"
 ```
 
 ```bash
-read -r desc < <(aws ec2 describe-security-groups --group-names "$group_name" \
+read -r desc < <(aws ec2 describe-security-groups \
+  --group-names "$group_name" \
   --query "SecurityGroups[?GroupName=='"$group_name"'].Description" \
-  --output text)
+  --output text) && echo "Security Group Description: $desc"
 
 ssh_rule=$(aws ec2 describe-security-group-rules \
   --filters "Name=group-id,Values=$group_id" \
