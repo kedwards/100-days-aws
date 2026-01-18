@@ -18,7 +18,9 @@ aws ec2 authorize-security-group-ingress help
 
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
+
 
 ```bash
 group_name="nautilus-sg"
@@ -40,7 +42,10 @@ aws ec2 authorize-security-group-ingress \
   --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0}]' 'IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=0.0.0.0/0}]'
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
+
 
 ```bash
 aws ec2 describe-security-groups --group-names "$group_name" \
@@ -111,3 +116,4 @@ else
 fi
 ```
 
+</details>

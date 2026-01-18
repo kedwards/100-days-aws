@@ -16,7 +16,9 @@ instance_name=datacenter-ec2
 instance_state=running
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
+
 
 ```bash
 instance_type=t2.nano
@@ -37,7 +39,10 @@ aws ec2 modify-instance-attribute \
   && aws ec2 wait instance-running --instance-ids "$instance_id"
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
+
 
 ```bash
 aws ec2 describe-instances \
@@ -91,3 +96,5 @@ else
   fi
 fi
 ```
+
+</details>

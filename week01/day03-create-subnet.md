@@ -12,7 +12,9 @@ aws ec2 describe-subnets help
 aws ec2 create-subnet help
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
+
 
 ```bash
 subnet_name=devops-subnet
@@ -31,7 +33,10 @@ aws ec2 create-subnet \
   --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=$subnet_name}]"
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
+
 
 ```bash
 aws ec2 describe-subnets --filters "Name=tag:Name,Values=$subnet_name" \
@@ -83,3 +88,5 @@ else
     echo "  ✓ VPC validation passed"
   fi
 fi
+
+</details>

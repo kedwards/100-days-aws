@@ -12,7 +12,9 @@ aws ec2 describe-instance-attribute help
 aws ec2 modify-instance-attribute help
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
+
 
 ```bash
 instance_name=xfusion-ec2
@@ -27,7 +29,10 @@ aws ec2 modify-instance-attribute \
   --instance-id "$instance_id"
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
+
 
 ```bash
 aws ec2 describe-instance-attribute \
@@ -59,3 +64,5 @@ else
   echo "    Got: $termination_protection"
 fi
 ```
+
+</details>

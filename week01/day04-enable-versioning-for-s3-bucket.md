@@ -14,7 +14,9 @@ aws s3api put-bucket versioning help
 aws s3api get-bucket versioning help
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
+
 
 ```bash
 bucket_name=xfusion-s3-31064
@@ -22,7 +24,10 @@ bucket_name=xfusion-s3-31064
 aws s3api put-bucket-versioning --bucket $bucket_name --versioning-configuration Status=Enabled
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
+
 
 ```bash
 aws s3api get-bucket-versioning --bucket $bucket_name \
@@ -46,3 +51,5 @@ else
   echo "    Got: $status"
 fi
 ```
+
+</details>

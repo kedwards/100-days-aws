@@ -14,7 +14,9 @@ Create a volume with the following requirements:
 aws ec2 create-volume help
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
+
 
 ```bash
 volume_name=xfusion-volume
@@ -25,7 +27,10 @@ aws ec2 create-volume --volume-type "$volume_type" --availability-zone us-east-1
 
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
+
 
 ```bash
 aws ec2 describe-volumes --filters "Name=tag:Name,Values=$volume_name" \
@@ -75,3 +80,5 @@ else
   fi
 fi
 ```
+
+</details>

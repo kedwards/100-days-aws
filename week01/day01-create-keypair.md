@@ -13,7 +13,9 @@ For this task, create a key pair with the following requirements:
 aws ec2 create-keypair help
 ```
 
-## Solution
+<details>
+<summary><h2>Solution</h2></summary>
+
 
 ```bash
 key_name="xfusion-kp"
@@ -22,7 +24,10 @@ key_type="rsa"
 aws ec2 create-key-pair --key-name "$key_name" --key-type "$key_type"
 ```
 
-## Validate
+</details>
+<details>
+<summary><h2>Validate</h2></summary>
+
 
 ```bash
 aws ec2 describe-key-pairs --filters "Name=key-name,Values=$key_name" \
@@ -66,3 +71,5 @@ else
   fi
 fi
 ```
+
+</details>
