@@ -1,8 +1,10 @@
-# Day 18 - Create IAM Policy
+# Day 18: Create Read-Only IAM Policy for EC2 Console Access
 
 ## Task
 
-Create an IAM policy with EC2 full access permissions.
+When establishing infrastructure on the AWS cloud, Identity and Access Management (IAM) is among the first and most critical services to configure. IAM facilitates the creation and management of user accounts, groups, roles, policies, and other access controls. The Nautilus DevOps team is currently in the process of configuring these resources and has outlined the following requirements.
+
+Create an IAM policy named iampolicy_kirsty in us-east-1 region, it must allow read-only access to the EC2 console, i.e this policy must allow users to view all instances, AMIs, and snapshots in the Amazon EC2 console.
 
 ## Help
 
@@ -17,7 +19,7 @@ aws iam list-policies help
 
 
 ```bash
-policy_name=iampolicy_ec2_full_access
+policy_name=iampolicy_kirsty
 
 # Create policy document
 cat > /tmp/policy.json << 'POLICY'

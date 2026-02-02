@@ -2,12 +2,12 @@
 
 ## Task
 
-Create a snapshot of an existing volume named devops-vol in us-east-1 region.
+The Nautilus DevOps team has some volumes in different regions in their AWS account. They are going to setup some automated backups so that all important data can be backed up on regular basis. For now they shared some requirements to take a snapshot of one of the volumes they have.
+
+Create a snapshot of an existing volume named xfusion-vol in us-east-1 region.
 
 1) The name of the snapshot must be devops-vol-ss.
-
 2) The description must be devops Snapshot.
-
 3) Make sure the snapshot status is completed before submitting the task.
 
 ## Help
@@ -54,6 +54,11 @@ aws ec2 describe-snapshots --owner-ids self \
 ```
 
 ```bash
+volume_name=devops-vol
+snapshot_name=devops-vol
+snapshot_description="devops Snapshot"
+
+
 read -r snapshot_id snap_volume_id snapshot_description state < <(aws ec2 describe-snapshots --owner-ids self \
   --filters "Name=tag:Name,Values=$snapshot_name" \
   --query "Snapshots[0].[SnapshotId,VolumeId,Description,State]" \
@@ -66,8 +71,8 @@ state_valid=false
 
 [[ -n "$snapshot_id" && "$snapshot_id" != "None" ]] && snapshot_exists=true
 [[ "$snapshot_description" == "$snapshot_description" ]] && snapshot_description_valid=true
-[[ "$snap_volume_id" == "$volume_id" ]] && volume_valid=true
-[[ "$state" == "completed" || "$state" == "pending" ]] && state_valid=true
+[[ "$snap_volume_id" ]] && volume_valid=true
+[[ "$state" =~ "completed" ]] && state_valid=true
 
 if [[ "$snapshot_exists" == true ]] && [[ "$volume_valid" == true ]] && [[ "$state_valid" == true ]] && [[ "$snapshot_description_valid" == true ]]; then
   echo "✓ Success"
@@ -102,7 +107,7 @@ else
   
   if [[ "$state_valid" == false ]]; then
     echo "  ✗ Snapshot state validation failed"
-    echo "    Expected: completed or pending"
+    echo "    Expected: completed"
     echo "    Got: $state"
   else
     echo "  ✓ Snapshot state validation passed"

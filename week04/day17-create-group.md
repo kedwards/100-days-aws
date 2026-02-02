@@ -2,7 +2,9 @@
 
 ## Task
 
-Create an IAM group with a specific group name.
+The Nautilus DevOps team has been creating a couple of services on AWS cloud. They have been breaking down the migration into smaller tasks, allowing for better control, risk mitigation, and optimization of resources throughout the migration process. Recently they came up with requirements mentioned below.
+
+Create an IAM group named iamgroup_siva.
 
 ## Help
 
@@ -17,7 +19,7 @@ aws iam get-group help
 
 
 ```bash
-group_name=iamgroup_developers
+group_name=iamgroup_siva
 
 aws iam create-group --group-name "$group_name"
 ```

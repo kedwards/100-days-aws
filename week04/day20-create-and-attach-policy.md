@@ -1,8 +1,17 @@
-# Day 20 - Create Role and Attach Policy
+# Day 20: Create IAM Role for EC2 with Policy Attachment
 
 ## Task
 
-Create an IAM role for EC2 and attach a policy to it.
+When establishing infrastructure on the AWS cloud, Identity and Access Management (IAM) is among the first and most critical services to configure. IAM facilitates the creation and management of user accounts, groups, roles, policies, and other access controls. The Nautilus DevOps team is currently in the process of configuring these resources and has outlined the following requirements:
+
+Create an IAM role as below:
+
+1) IAM role name must be iamrole_rose.
+
+2) Entity type must be AWS Service and use case must be EC2.
+
+3) Attach a policy named iampolicy_rose.
+
 
 ## Help
 
@@ -17,8 +26,8 @@ aws iam list-attached-role-policies help
 
 
 ```bash
-role_name=iamrole_ec2
-policy_name=iampolicy_ec2_full_access
+role_name=iamrole_rose
+policy_name=iampolicy_rose
 
 # Create trust policy document
 cat > /tmp/trust-policy.json << 'POLICY'

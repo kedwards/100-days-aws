@@ -1,8 +1,10 @@
-# Day 19 - Attach Policy to User
+# Day 19: Attach IAM Policy to IAM User
 
 ## Task
 
-Attach an IAM policy to an IAM user.
+The Nautilus DevOps team has been creating a couple of services on AWS cloud. They have been breaking down the migration into smaller tasks, allowing for better control, risk mitigation, and optimization of resources throughout the migration process. Recently they came up with requirements mentioned below.
+
+An IAM user named iamuser_john and a policy named iampolicy_john already exist. Attach the IAM policy iampolicy_john to the IAM user iamuser_john.
 
 ## Help
 
@@ -18,7 +20,7 @@ aws iam list-attached-user-policies help
 
 ```bash
 user_name=iamuser_john
-policy_name=iampolicy_ec2_full_access
+policy_name=iampolicy_john
 
 read -r policy_arn < <(aws iam list-policies \
   --query "Policies[?PolicyName=='$policy_name'].Arn" \
@@ -41,6 +43,9 @@ aws iam list-attached-user-policies --user-name "$user_name" \
 ```
 
 ```bash
+user_name=
+policy_name=
+
 read -r attached_policy_arn attached_policy_name < <(aws iam list-attached-user-policies \
   --user-name "$user_name" \
   --query "AttachedPolicies[?PolicyName=='$policy_name'].[PolicyArn,PolicyName]" \
