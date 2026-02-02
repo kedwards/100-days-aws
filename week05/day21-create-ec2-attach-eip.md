@@ -71,6 +71,11 @@ aws ec2 describe-instances --instance-ids "$instance_id" \
 ```
 
 ```bash
+instance_name=datacenter-ec2
+eip_name=datacenter-eip
+instance_type=t2.micro
+region=us-east-1
+
 read -r allocation_id associated_instance public_ip < <(aws ec2 describe-addresses \
   --filters "Name=tag:Name,Values=$eip_name" \
   --query "Addresses[0].[AllocationId,InstanceId,PublicIp]" \
