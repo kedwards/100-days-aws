@@ -2,12 +2,14 @@
 
 ## Task
 
-Create an EC2 instance with SSH access using an imported key pair.
+The Nautilus DevOps team needs to set up a new EC2 instance that can be accessed securely from their landing host (aws-client). The instance should be of type t2.micro and named nautilus-ec2. A new SSH key with name id_rsa should be created on the aws-client host under the/root/.ssh/ folder, if it doesn't already exist. This key should then be added to the root user's authorised keys on the EC2 instance, allowing passwordless SSH access from the aws-client host.
 
 ## Help
 
 ```bash
+aws ec2 describe-images help
 aws ec2 import-key-pair help
+aws ec2 create-security-group help
 aws ec2 authorize-security-group-ingress help
 aws ec2 run-instances help
 ```
@@ -64,6 +66,7 @@ aws ec2 run-instances \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 
@@ -75,6 +78,11 @@ aws ec2 describe-instances --filters "Name=tag:Name,Values=$instance_name" \
 ```
 
 ```bash
+instance_name=nautilus-ec2
+instance_type=t2.micro
+region=us-east-1
+key_name=aws-client-key
+
 read -r instance_id instance_key instance_sg instance_state public_ip < <(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,KeyName,SecurityGroups[0].GroupId,State.Name,PublicIpAddress]" \
@@ -84,6 +92,32 @@ read -r ssh_rule < <(aws ec2 describe-security-group-rules \
   --filters "Name=group-id,Values=$instance_sg" \
   --query "SecurityGroupRules[?IsEgress==\`false\` && IpProtocol==\`tcp\` && FromPort==\`22\` && ToPort==\`22\`].SecurityGroupRuleId" \
   --output text) && echo "SSH rule ID: $ssh_rule"
+
+# Test actual SSH connectivity
+ssh_ready=false
+if [[ -n "$public_ip" && "$public_ip" != "None" ]]; then
+  echo "Testing SSH connection to $public_ip..."
+  
+  # Wait for SSH to be ready (instance might still be initializing)
+  timeout=60
+  elapsed=0
+  
+  while [[ $elapsed -lt $timeout ]]; do
+    if ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes ec2-user@$public_ip "echo 'SSH connection successful'" 2>/dev/null; then
+      ssh_ready=true
+      echo "  ✓ SSH connection test passed"
+      break
+    fi
+    sleep 5
+    elapsed=$((elapsed + 5))
+  done
+  
+  if [[ "$ssh_ready" == false ]]; then
+    echo "  ✗ SSH connection test failed (timeout after ${timeout}s)"
+  fi
+else
+  echo "  ✗ No public IP available for SSH test"
+fi
 
 # Check validation
 instance_exists=false
@@ -96,13 +130,13 @@ state_valid=false
 [[ -n "$ssh_rule" ]] && ssh_enabled=true
 [[ "$instance_state" == "running" ]] && state_valid=true
 
-if [[ "$instance_exists" == true ]] && [[ "$key_valid" == true ]] && [[ "$ssh_enabled" == true ]] && [[ "$state_valid" == true ]]; then
-  echo "✓ Success"
+if [[ "$instance_exists" == true ]] && [[ "$key_valid" == true ]] && [[ "$ssh_enabled" == true ]] && [[ "$state_valid" == true ]] && [[ "$ssh_ready" == true ]]; then
+  echo "✓ Success - SSH access fully confirmed"
   echo "  Instance ID: $instance_id"
   echo "  Key name: $instance_key"
   echo "  State: $instance_state"
   echo "  Public IP: $public_ip"
-  echo "  SSH access: Enabled"
+  echo "  SSH access: Enabled and tested"
 else
   echo "✗ Fail"
   
@@ -132,6 +166,12 @@ else
     echo "    Got: $instance_state"
   else
     echo "  ✓ Instance state validation passed"
+  fi
+  
+  if [[ "$ssh_ready" == false ]]; then
+    echo "  ✗ SSH connectivity test failed"
+  else
+    echo "  ✓ SSH connectivity test passed"
   fi
 fi
 ```

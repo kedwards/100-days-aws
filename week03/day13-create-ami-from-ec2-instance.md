@@ -39,6 +39,7 @@ aws ec2 wait image-available \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

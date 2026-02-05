@@ -11,9 +11,10 @@ An EC2 instances was underutilized, prompting them to decide to change the insta
 ## Help
 
 ```bash
-instance_type=t2.nano
-instance_name=datacenter-ec2
-instance_state=running
+aws ec2 describe-instances help
+aws ec2 stop-instances help
+aws ec2 modify-instance-attribute help
+aws ec2 start-instances help
 ```
 
 <details>
@@ -40,6 +41,7 @@ aws ec2 modify-instance-attribute \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

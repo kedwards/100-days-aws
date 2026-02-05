@@ -28,6 +28,7 @@ aws ec2 create-volume --volume-type "$volume_type" --availability-zone us-east-1
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

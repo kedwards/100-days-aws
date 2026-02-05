@@ -2,7 +2,18 @@
 
 ## Task
 
-Create a new S3 bucket and sync content from an existing S3 bucket to the new bucket.
+As part of a data migration project, the team lead has tasked the team with migrating data from an existing S3 bucket to a new S3 bucket. The existing bucket contains a substantial amount of data that must be accurately transferred to the new bucket. The team is responsible for creating the new S3 bucket and ensuring that all data from the existing bucket is copied or synced to the new bucket completely and accurately. It is imperative to perform thorough verification steps to confirm that all data has been successfully transferred to the new bucket without any loss or corruption.
+
+As a member of the Nautilus DevOps Team, your task is to perform the following:
+
+Create a New Private S3 Bucket: Name the bucket nautilus-sync-27859.
+
+Data Migration: Migrate the entire data from the existing nautilus-s3-6954 bucket to the new nautilus-sync-27859 bucket.
+
+Ensure Data Consistency: Ensure that both buckets have the same data.
+
+Use AWS CLI: Use the AWS CLI to perform the creation and data migration tasks.
+
 
 ## Help
 
@@ -31,6 +42,7 @@ aws s3 sync s3://"$source_bucket"/ s3://"$destination_bucket"/
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 
@@ -44,18 +56,18 @@ aws s3 ls s3://"$destination_bucket"/ --recursive
 ```
 
 ```bash
+# Variables should match those defined in Solution section
+
 # Count objects in both buckets
-source_count=$(aws s3 ls s3://"$source_bucket"/ --recursive | wc -l)
-dest_count=$(aws s3 ls s3://"$destination_bucket"/ --recursive | wc -l)
+source_count=$(aws s3 ls s3://"$source_bucket"/ --recursive | wc -l) && echo "Source count: $source_count"
+dest_count=$(aws s3 ls s3://"$destination_bucket"/ --recursive | wc -l) && echo "Destination count: $dest_count"
 
 # Check if destination bucket exists
-bucket_exists=$(aws s3api head-bucket --bucket "$destination_bucket" 2>&1)
+bucket_exists=$(aws s3api head-bucket --bucket "$destination_bucket" 2>&1) && bucket_valid=true && echo "Bucket exists check: $bucket_exists"
 
 # Check validation
-bucket_valid=false
 sync_valid=false
 
-[[ -z "$bucket_exists" ]] && bucket_valid=true
 [[ "$source_count" -eq "$dest_count" && "$dest_count" -gt 0 ]] && sync_valid=true
 
 if [[ "$bucket_valid" == true ]] && [[ "$sync_valid" == true ]]; then

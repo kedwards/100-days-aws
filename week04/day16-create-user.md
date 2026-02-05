@@ -25,6 +25,7 @@ aws iam create-user --user-name "$user_name"
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 
@@ -36,7 +37,6 @@ aws iam get-user --user-name "$user_name" \
 ```
 
 ```bash
-user_name=devops-user
 read -r retrieved_username user_id < <(aws iam get-user --user-name "$user_name" \
   --query "User.[UserName,UserId]" \
   --output text) && echo "Username: $retrieved_username, User ID: $user_id"

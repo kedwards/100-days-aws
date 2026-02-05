@@ -41,6 +41,7 @@ aws ec2 terminate-instances --instance-ids "$instance_id"
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

@@ -25,6 +25,7 @@ aws s3api put-bucket-versioning --bucket $bucket_name --versioning-configuration
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

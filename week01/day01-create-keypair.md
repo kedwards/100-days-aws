@@ -25,6 +25,7 @@ aws ec2 create-key-pair --key-name "$key_name" --key-type "$key_type"
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

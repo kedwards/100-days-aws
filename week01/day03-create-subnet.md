@@ -34,6 +34,7 @@ aws ec2 create-subnet \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 
@@ -88,5 +89,6 @@ else
     echo "  ✓ VPC validation passed"
   fi
 fi
+```
 
 </details>

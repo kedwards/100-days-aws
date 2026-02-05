@@ -30,6 +30,7 @@ aws ec2 modify-instance-attribute \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

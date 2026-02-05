@@ -42,6 +42,7 @@ aws ec2 wait snapshot-completed \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 
@@ -54,30 +55,25 @@ aws ec2 describe-snapshots --owner-ids self \
 ```
 
 ```bash
-volume_name=devops-vol
-snapshot_name=devops-vol
-snapshot_description="devops Snapshot"
-
-
-read -r snapshot_id snap_volume_id snapshot_description state < <(aws ec2 describe-snapshots --owner-ids self \
+read -r snapshot_id snap_volume_id snap_description state < <(aws ec2 describe-snapshots --owner-ids self \
   --filters "Name=tag:Name,Values=$snapshot_name" \
   --query "Snapshots[0].[SnapshotId,VolumeId,Description,State]" \
-  --output text) && echo "Snapshot ID: $snapshot_id, Volume: $snap_volume_id, Description: $snapshot_description, State: $state"
+  --output text) && echo "Snapshot ID: $snapshot_id, Volume: $snap_volume_id, Description: $snap_description, State: $state"
 
 snapshot_exists=false
-snapshot_description_valid=false
+description_valid=false
 volume_valid=false
 state_valid=false
 
 [[ -n "$snapshot_id" && "$snapshot_id" != "None" ]] && snapshot_exists=true
-[[ "$snapshot_description" == "$snapshot_description" ]] && snapshot_description_valid=true
-[[ "$snap_volume_id" ]] && volume_valid=true
-[[ "$state" =~ "completed" ]] && state_valid=true
+[[ "$snap_description" == "$snapshot_description" ]] && description_valid=true
+[[ -n "$snap_volume_id" && "$snap_volume_id" != "None" ]] && volume_valid=true
+[[ "$state" == "completed" ]] && state_valid=true
 
-if [[ "$snapshot_exists" == true ]] && [[ "$volume_valid" == true ]] && [[ "$state_valid" == true ]] && [[ "$snapshot_description_valid" == true ]]; then
+if [[ "$snapshot_exists" == true ]] && [[ "$volume_valid" == true ]] && [[ "$state_valid" == true ]] && [[ "$description_valid" == true ]]; then
   echo "✓ Success"
   echo "  Snapshot ID: $snapshot_id"
-  echo "  Description: $snapshot_description"
+  echo "  Description: $snap_description"
   echo "  Volume ID: $snap_volume_id"
   echo "  State: $state"
 else
@@ -89,10 +85,10 @@ else
     echo "  ✓ Snapshot exists"
   fi
 
-  if [[ "$snapshot_description_valid" == false ]]; then
+  if [[ "$description_valid" == false ]]; then
     echo "  ✗ Snapshot description validation failed"
     echo "    Expected: $snapshot_description"
-    echo "    Got: $snapshot_description"
+    echo "    Got: $snap_description"
   else
     echo "  ✓ Snapshot description validation passed"
   fi

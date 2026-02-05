@@ -2,7 +2,11 @@
 
 ## Task
 
-Create an EC2 instance and attach an Elastic IP to it.
+The Nautilus DevOps Team has received a new request from the Development Team to set up a new EC2 instance. This instance will be used to host a new application that requires a stable IP address. To ensure that the instance has a consistent public IP, an Elastic IP address needs to be associated with it. The instance will be named nautilus-ec2, and the Elastic IP will be named nautilus-eip. This setup will help the Development Team to have a reliable and consistent access point for their application.
+
+Create an EC2 instance named nautilus-ec2 using any linux AMI like ubuntu, the Instance type must be t2.micro and associate an Elastic IP address with this instance, name it as nautilus-eip.
+
+Use below given AWS Credentials: (You can run the showcreds command on aws-client host to retrieve these credentials)
 
 ## Help
 
@@ -31,6 +35,11 @@ read -r image_id < <(aws ec2 describe-images \
   --query 'reverse(sort_by(Images, &CreationDate))[:1] | [0].ImageId' \
   --output text) && echo "Image ID: $image_id"
 
+instance_name=xfusion-ec2
+eip_name=xfusion-eip
+instance_type=t2.micro
+region=us-east-1
+
 # Create EC2 instance
 read -r instance_id < <(aws ec2 run-instances \
   --image-id "$image_id" \
@@ -56,6 +65,7 @@ aws ec2 associate-address \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 
@@ -71,10 +81,10 @@ aws ec2 describe-instances --instance-ids "$instance_id" \
 ```
 
 ```bash
-instance_name=datacenter-ec2
-eip_name=datacenter-eip
+instance_name=nautilus-eip
+eip_name=nautilus-eip
 instance_type=t2.micro
-region=us-east-1
+region=eu-west-1
 
 read -r allocation_id associated_instance public_ip < <(aws ec2 describe-addresses \
   --filters "Name=tag:Name,Values=$eip_name" \

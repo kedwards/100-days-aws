@@ -15,7 +15,6 @@ For this task, create a security group under default VPC with the following requ
 aws ec2 describe-vpcs help
 aws ec2 create-security-group help
 aws ec2 authorize-security-group-ingress help
-
 ```
 
 <details>
@@ -43,6 +42,7 @@ aws ec2 authorize-security-group-ingress \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

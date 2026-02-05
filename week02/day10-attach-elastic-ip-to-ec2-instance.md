@@ -21,13 +21,13 @@ instance_name=devops-ec2
 eip_name=devops-ec2-eip
 
 read -r instance_id < <(aws ec2 describe-instances \
-  --filter 'Name=tag:Name,Values=$instance_name' \
-  --query 'Reservations[].Instances[].InstanceId' \
+  --filter "Name=tag:Name,Values=$instance_name" \
+  --query "Reservations[].Instances[].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
   
 read -r allocation_id < <(aws ec2 describe-addresses \
-  --filter 'Name=tag:Name,Values=$eip_name' \
-  --query 'Addresses[].AllocationId' \
+  --filter "Name=tag:Name,Values=$eip_name" \
+  --query "Addresses[].AllocationId" \
   --output text) && echo "Allocation ID: $allocation_id"
 
 aws ec2 associate-address \
@@ -36,6 +36,7 @@ aws ec2 associate-address \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

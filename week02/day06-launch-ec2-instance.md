@@ -55,6 +55,7 @@ aws ec2 run-instances \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 

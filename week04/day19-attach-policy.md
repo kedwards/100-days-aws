@@ -32,6 +32,7 @@ aws iam attach-user-policy \
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 
@@ -43,9 +44,6 @@ aws iam list-attached-user-policies --user-name "$user_name" \
 ```
 
 ```bash
-user_name=
-policy_name=
-
 read -r attached_policy_arn attached_policy_name < <(aws iam list-attached-user-policies \
   --user-name "$user_name" \
   --query "AttachedPolicies[?PolicyName=='$policy_name'].[PolicyArn,PolicyName]" \

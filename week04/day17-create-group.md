@@ -25,6 +25,7 @@ aws iam create-group --group-name "$group_name"
 ```
 
 </details>
+
 <details>
 <summary><h2>Validate</h2></summary>
 
