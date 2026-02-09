@@ -32,15 +32,46 @@ region=us-east-1
 alarm_name=xfusion-alarm
 alarm_metric=CPUUtilization
 alarm_statistic=Average
+alarm_topic=xfusion-sns-topic
 
+read -r alarm_topic_arn < <(aws sns create-topic \
+  --name rch-sns-topic \
+  --query "TopicArn" \
+  --output ext) && echo "SNS Topic ARN: $alarm_topic_arn"
+
+aws sns subscribe \
+  --protocol 'email' \
+  --topic-arn "$alarm_topic_arn" \
+  --endpoint 'devops@withreach.com' \
+  --attributes '{}' \
+  --return-subscription-arn
+
+cat <<'EOF' > user-data.sh
+#!/bin/bash
+set -eux
+
+# Burn CPU on all cores
+CORES=$(nproc)
+
+for i in $(seq 1 "$CORES"); do
+  nohup bash -c "while :; do :; done" &
+done
+EOF
+
+#
+# Ubuntu 24.04 - resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+# Amazon Linux 2023 - resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 
+#
 aws ec2 run-instances \
-  --image-id resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id \
+  --image-id \
+    resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_6a4 \
   --instance-type "$instance_type" \
   --region "$region" \
-  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]"
+  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value="$instance_name"}]" \
+  --user-data file://user-data.sh
 
 read -r sns_topic_arn < <(aws sns list-topics \
-  --query "Topics[?contains(TopicArn, 'xfusion-sns-topic')].TopicArn" \
+  --query "Topics[?contains(TopicArn, '$alarm_topic')].TopicArn" \
   --output text) && echo "SNS Topic ARN: $sns_topic_arn"
 
 aws cloudwatch put-metric-alarm \
@@ -111,7 +142,7 @@ sns_configured=false
 [[ -n "$alarm_state" && "$alarm_state" != "None" ]] && alarm_exists=true
 [[ "$alarm_threshold" == "90.0" && "$alarm_metric" == "CPUUtilization" && "$alarm_namespace" == "AWS/EC2" ]] && alarm_configured=true
 [[ "$alarm_dimensions" == "$instance_id" ]] && instance_monitored=true
-[[ "$alarm_actions" == *"xfusion-sns-topic"* ]] && sns_configured=true
+[[ "$alarm_actions" == *"$alarm_topic"* ]] && sns_configured=true
 
 if [[ "$instance_exists" == true ]] && [[ "$instance_running" == true ]] && [[ "$alarm_exists" == true ]] && [[ "$alarm_configured" == true ]] && [[ "$instance_monitored" == true ]] && [[ "$sns_configured" == true ]]; then
   echo "✓ Success"
@@ -163,7 +194,7 @@ else
   
   if [[ "$sns_configured" == false ]]; then
     echo "  ✗ SNS topic not configured"
-    echo "    Expected: xfusion-sns-topic in alarm actions"
+    echo "    Expected: reach-sns-topic in alarm actions"
     echo "    Got: $alarm_actions"
   else
     echo "  ✓ SNS topic configured"

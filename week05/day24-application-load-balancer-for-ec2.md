@@ -124,6 +124,11 @@ aws elbv2 describe-target-health --target-group-arn "$tg_arn" \
 ```
 
 ```bash
+instance_name=datacenter-ec2
+alb_name=datacenter-alb
+tg_name=datacenter
+sg_name=datacenter-sg
+
 read -r alb_state alb_dns < <(aws elbv2 describe-load-balancers --names "$alb_name" \
   --query "LoadBalancers[0].[State.Code,DNSName]" \
   --output text) && echo "ALB state: $alb_state, DNS: $alb_dns"
