@@ -15,8 +15,9 @@ For this task, create an EC2 instance with following requirements:
 ```bash
 aws ec2 describe-images help
 aws ec2 describe-security-groups help
-aws ec2 create-keypair help
+aws ec2 create-key-pair help
 aws ec2 run-instances help
+aws ec2 describe-instances help
 ```
 
 <details>

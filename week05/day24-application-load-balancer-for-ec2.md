@@ -14,10 +14,19 @@ The Nautilus DevOps team is currently working on setting up a simple application
 ## Help
 
 ```bash
+aws ec2 describe-vpcs help
+aws ec2 describe-instances help
+aws ec2 describe-security-groups help
+aws ec2 create-security-group help
+aws ec2 authorize-security-group-ingress help
+aws ec2 describe-subnets help
 aws elbv2 create-target-group help
 aws elbv2 register-targets help
 aws elbv2 create-load-balancer help
-aws ec2 create-security-group help
+aws elbv2 create-listener help
+aws elbv2 describe-load-balancers help
+aws elbv2 describe-target-health help
+aws elbv2 describe-listeners help
 ```
 
 <details>

@@ -10,8 +10,8 @@ The s3 bucket name is xfusion-s3-31064, enable versioning for this bucket.
 
 ```bash
 aws s3api list-buckets help
-aws s3api put-bucket versioning help
-aws s3api get-bucket versioning help
+aws s3api put-bucket-versioning help
+aws s3api get-bucket-versioning help
 ```
 
 <details>

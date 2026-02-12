@@ -15,6 +15,8 @@ aws ec2 describe-images help
 aws ec2 run-instances help
 aws ec2 allocate-address help
 aws ec2 associate-address help
+aws ec2 describe-addresses help
+aws ec2 describe-instances help
 ```
 
 <details>

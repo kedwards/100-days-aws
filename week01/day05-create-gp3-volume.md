@@ -12,6 +12,7 @@ Create a volume with the following requirements:
 
 ```bash
 aws ec2 create-volume help
+aws ec2 describe-volumes help
 ```
 
 <details>

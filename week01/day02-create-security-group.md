@@ -14,7 +14,9 @@ For this task, create a security group under default VPC with the following requ
 ```bash
 aws ec2 describe-vpcs help
 aws ec2 create-security-group help
+aws ec2 describe-security-groups help
 aws ec2 authorize-security-group-ingress help
+aws ec2 describe-security-group-rules help
 ```
 
 <details>

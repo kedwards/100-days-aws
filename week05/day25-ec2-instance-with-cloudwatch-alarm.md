@@ -16,6 +16,9 @@ The Nautilus DevOps team has been tasked with setting up an EC2 instance for the
 ```bash
 aws ec2 describe-images help
 aws ec2 run-instances help
+aws ec2 describe-instances help
+aws sns create-topic help
+aws sns subscribe help
 aws sns list-topics help
 aws cloudwatch put-metric-alarm help
 aws cloudwatch describe-alarms help
@@ -64,7 +67,7 @@ EOF
 #
 aws ec2 run-instances \
   --image-id \
-    resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_6a4 \
+    resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
   --instance-type "$instance_type" \
   --region "$region" \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value="$instance_name"}]" \

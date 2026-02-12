@@ -19,6 +19,7 @@ Use AWS CLI: Use the AWS CLI to perform the creation and data migration tasks.
 
 ```bash
 aws s3api create-bucket help
+aws s3api head-bucket help
 aws s3 sync help
 aws s3 ls help
 ```

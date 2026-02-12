@@ -17,6 +17,8 @@ Create an IAM role as below:
 
 ```bash
 aws iam create-role help
+aws iam get-role help
+aws iam list-policies help
 aws iam attach-role-policy help
 aws iam list-attached-role-policies help
 ```

@@ -10,7 +10,8 @@ For this task, create a key pair with the following requirements:
 ## Help
 
 ```bash
-aws ec2 create-keypair help
+aws ec2 create-key-pair help
+aws ec2 describe-key-pairs help
 ```
 
 <details>

@@ -9,10 +9,21 @@ Create a public VPC named datacenter-pub-vpc, and a subnet named datacenter-pub-
 ## Help
 
 ```bash
-aws create-vpc help
-aws describe-vpcs help
-aws create-subnet help
+aws ec2 create-vpc help
+aws ec2 describe-vpcs help
+aws ec2 create-subnet help
+aws ec2 modify-subnet-attribute help
 aws ec2 create-internet-gateway help
+aws ec2 attach-internet-gateway help
+aws ec2 describe-route-tables help
+aws ec2 create-route help
+aws ec2 create-security-group help
+aws ec2 authorize-security-group-ingress help
+aws ec2 describe-images help
+aws ec2 import-key-pair help
+aws ec2 run-instances help
+aws ec2 describe-instances help
+aws ec2 describe-security-group-rules help
 ```
 
 <details>
@@ -20,12 +31,12 @@ aws ec2 create-internet-gateway help
 
 
 ```bash
-vpc_name=xfusion-pub-vpc
-subnet_name=xfusion-pub-subnet
+vpc_name=nautilus-pub-vpc
+subnet_name=nautilus-pub-subnet
 key_name=aws-client-key
 region=us-east-1
 instance_type=t2.micro
-instance_name=xfusion-pub-ec2
+instance_name=nautilus-pub-ec2
 
 if [[ ! -f ~/.ssh/id_rsa.pub ]]; then
   ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
@@ -91,7 +102,8 @@ read -r image_id < <(aws ec2 describe-images \
   --output text) && echo "Image ID: $image_id"
 
 aws ec2 run-instances \
-  --image-id "$image_id" \
+  --image-id \
+    resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
   --instance-type "$instance_type" \
   --region "$region" \
   --security-group-ids "$security_group_id" \
@@ -107,6 +119,9 @@ aws ec2 run-instances \
 
 
 ```bash
+instance_name=datacenter-pub-ec2
+instance_sg=default
+
 read -r instance_id instance_key instance_sg instance_state public_ip < <(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,KeyName,SecurityGroups[0].GroupId,State.Name,PublicIpAddress]" \

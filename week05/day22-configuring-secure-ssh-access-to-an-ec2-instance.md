@@ -9,9 +9,11 @@ The Nautilus DevOps team needs to set up a new EC2 instance that can be accessed
 ```bash
 aws ec2 describe-images help
 aws ec2 import-key-pair help
-aws ec2 create-security-group help
+aws ec2 describe-security-groups help
 aws ec2 authorize-security-group-ingress help
 aws ec2 run-instances help
+aws ec2 describe-instances help
+aws ec2 describe-security-group-rules help
 ```
 
 <details>

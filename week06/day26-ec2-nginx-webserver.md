@@ -22,8 +22,11 @@ Security Group: Ensure that the instance allows HTTP traffic on port 80 from the
 ```bash
 aws ec2 describe-images help
 aws ec2 describe-security-groups help
-aws ec2 run-instances help
+aws ec2 import-key-pair help
 aws ec2 authorize-security-group-ingress help
+aws ec2 run-instances help
+aws ec2 describe-instances help
+aws ec2 describe-security-group-rules help
 ```
 
 <details>

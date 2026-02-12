@@ -11,6 +11,7 @@ Create a private ECR repository named devops-ecr. There is a Dockerfile under /r
 aws ecr describe-repositories help
 aws ecr create-repository help
 aws ecr get-login-password help
+aws ecr describe-images help
 docker build help
 docker push help
 ```
@@ -32,8 +33,27 @@ read -r registry_id repository_uri < <(aws ecr create-repository \
 # Authenticate Docker to ECR
 aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$registry_id.dkr.ecr.$region.amazonaws.com"
 
+mkdir my-app
+
+cat <<EOF > ./my-app/requirements.txt
+# no dependencies
+EOF
+
+cat <<EOF > ./my-app/app.py
+print("Hello, World!")
+EOF
+
+cat <<EOF > ./my-app/Dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["python", "app.py"]
+EOF
+
 # Build and push image
-cd /root/pyapp
+cd ./my-app
 docker build -t "$repository_uri:latest" .
 docker push "$repository_uri:latest"
 ```
@@ -55,7 +75,7 @@ aws ecr describe-images --repository-name "$repository_name" \
 ```
 
 ```bash
-repository_name=devops-ecr
+repository_name=datacenter-ecr
 image_tag=latest
 
 read -r repo_name repo_uri < <(aws ecr describe-repositories \
