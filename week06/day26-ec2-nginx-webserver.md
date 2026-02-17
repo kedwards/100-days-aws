@@ -34,7 +34,7 @@ aws ec2 describe-security-group-rules help
 
 
 ```bash
-instance_name=nautilus-ec2
+instance_name=devops-ec2
 instance_type=t2.micro
 key_name=aws-client-key
 region=us-east-1

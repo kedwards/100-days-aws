@@ -1,4 +1,4 @@
-# Day 10 - Attach Elastic IP to EC2 Instance
+# Day 10: Attach Elastic IP to EC2 Instance
 
 ## Task
 

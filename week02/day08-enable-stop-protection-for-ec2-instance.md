@@ -1,4 +1,4 @@
-# Day 08 - Enable Stop Protection for EC2 Instance
+# Day 8: Enable Stop Protection for EC2 Instance
 
 ## Task
 

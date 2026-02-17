@@ -24,8 +24,8 @@ aws ec2 describe-instances help
 
 
 ```bash
-instance_name=datacenter-ec2
-eip_name=datacenter-eip
+instance_name=nautilus-ec2
+eip_name=nautilus-eip
 instance_type=t2.micro
 region=us-east-1
 
@@ -36,11 +36,6 @@ read -r image_id < <(aws ec2 describe-images \
   --filters 'Name=name,Values=al2023-ami-2023.*-x86_64' \
   --query 'reverse(sort_by(Images, &CreationDate))[:1] | [0].ImageId' \
   --output text) && echo "Image ID: $image_id"
-
-instance_name=xfusion-ec2
-eip_name=xfusion-eip
-instance_type=t2.micro
-region=us-east-1
 
 # Create EC2 instance
 read -r instance_id < <(aws ec2 run-instances \
@@ -83,10 +78,10 @@ aws ec2 describe-instances --instance-ids "$instance_id" \
 ```
 
 ```bash
-instance_name=nautilus-eip
+instance_name=nautilus-ec2
 eip_name=nautilus-eip
 instance_type=t2.micro
-region=eu-west-1
+region=us-east-1
 
 read -r allocation_id associated_instance public_ip < <(aws ec2 describe-addresses \
   --filters "Name=tag:Name,Values=$eip_name" \

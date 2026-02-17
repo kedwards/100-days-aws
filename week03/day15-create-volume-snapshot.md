@@ -23,9 +23,9 @@ aws ec2 describe-snapshots help
 
 
 ```bash
-volume_name=datacenter-vol
-snapshot_name=datacenter-vol-ss
-snapshot_description="datacenter Snapshot"
+volume_name=xfusion-vol
+snapshot_name=devops-vol-ss
+snapshot_description="devops Snapshot"
 
 read -r volume_id < <(aws ec2 describe-volumes \
   --filters "Name=tag:Name,Values=$volume_name" \

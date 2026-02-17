@@ -1,4 +1,4 @@
-# Day 04 - Enabling version for S3 Bucket
+# Day 4: Enable Versioning for S3 Bucket
 
 ## Task
 

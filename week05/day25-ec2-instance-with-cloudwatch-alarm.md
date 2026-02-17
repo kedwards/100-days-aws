@@ -38,9 +38,9 @@ alarm_statistic=Average
 alarm_topic=xfusion-sns-topic
 
 read -r alarm_topic_arn < <(aws sns create-topic \
-  --name rch-sns-topic \
+  --name xfusion-sns-topic \
   --query "TopicArn" \
-  --output ext) && echo "SNS Topic ARN: $alarm_topic_arn"
+  --output text) && echo "SNS Topic ARN: $alarm_topic_arn"
 
 aws sns subscribe \
   --protocol 'email' \

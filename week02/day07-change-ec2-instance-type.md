@@ -1,4 +1,4 @@
-# Day 07 - Change EC2 Instance Type
+# Day 7: Change EC2 Instance Type
 
 ## Task
 

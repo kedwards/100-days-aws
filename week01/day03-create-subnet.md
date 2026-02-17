@@ -1,4 +1,4 @@
-# Day 03 - Create Subnet
+# Day 03: Create Subnet
 
 ## Task
 

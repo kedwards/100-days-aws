@@ -1,4 +1,4 @@
-# Day 02 - Create Security Group
+# Day 2: Create Security Group
 
 ## Task
 

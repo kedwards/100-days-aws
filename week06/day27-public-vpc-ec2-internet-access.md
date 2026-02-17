@@ -31,12 +31,12 @@ aws ec2 describe-security-group-rules help
 
 
 ```bash
-vpc_name=nautilus-pub-vpc
-subnet_name=nautilus-pub-subnet
+vpc_name=datacenter-pub-vpc
+subnet_name=datacenter-pub-subnet
 key_name=aws-client-key
 region=us-east-1
 instance_type=t2.micro
-instance_name=nautilus-pub-ec2
+instance_name=datacenter-pub-ec2
 
 if [[ ! -f ~/.ssh/id_rsa.pub ]]; then
   ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""

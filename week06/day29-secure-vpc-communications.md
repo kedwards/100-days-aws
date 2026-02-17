@@ -56,7 +56,7 @@ aws ec2 describe-security-group-rules help
 public_ec2_name=datacenter-public-ec2
 private_ec2_name=datacenter-private-ec2
 peer_conn_name=datacenter-vpc-peering
-private_vpc_name=datacente-private-vpc
+private_vpc_name=datacenter-private-vpc
 
 
 read -r default_vpc_id < <(aws ec2 describe-vpcs \

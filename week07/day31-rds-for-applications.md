@@ -1,4 +1,4 @@
-# Day XX - Task title
+# Day 31: Provision Private RDS Instance for Application Development
 
 ## Task
 
@@ -25,16 +25,26 @@ aws ec2 describe-security-groups help
 <summary><h2>Solution</h2></summary>
 
 ```bash
-aws rds create-db-subnet-group --db-subnet-group-name 'default-vpc-07f9891b00f0ca2c0' --subnet-ids 'subnet-0b7bd3c25a6b45f12' 'subnet-068f65c836c137af8' 'subnet-0b9cad2436a27fffd' 'subnet-0081136f7e3741c55' 'subnet-0126648fd4f1865bb' 'subnet-09361e750f470a547' --db-subnet-group-description 'Created from the RDS Management Console' 
-aws rds create-db-instance --engine 'mysql' --engine-version '8.4.7' --engine-lifecycle-support 'open-source-rds-extended-support-disabled' --db-instance-identifier 'xfusion-db' --master-username 'admin' --db-instance-class 'db.t3.micro' --db-subnet-group-name 'default-vpc-07f9891b00f0ca2c0' --db-name '' --character-set-name 'null' --nchar-character-set-name 'null' --vpc-security-group-ids 'sg-0560a2153f703983e' --db-security-groups 'null' --availability-zone 'null' --port '3306' --storage-type 'gp2' --allocated-storage '20' --iops 'null' --storage-throughput 'null' --kms-key-id 'null' --preferred-maintenance-window 'null' --preferred-backup-window 'null' --backup-retention-period '1' --domain 'null' --domain-iam-role-name 'null' --domain-fqdn 'null' --domain-ou 'null' --domain-auth-secret-arn 'null' --domain-dns-ips 'null' --db-parameter-group-name 'default.mysql8.4' --option-group-name 'default:mysql-8-4' --timezone 'null' --processor-features 'null' --max-allocated-storage '50' --network-type 'null' --backup-target 'null' --ca-certificate-identifier 'rds-ca-rsa2048-g1' --master-user-password 'password'
+db_name=xfusion-rds
+db_engine=mysql
+db_engine_version=8.4
+db_instance_class=db.t3.micro
+db_max_storage=50
+
+aws rds create-db-instance \
+  --engine $db_engine \
+  --engine-version $db_engine_version \
+  --db-instance-identifier $db_name \
+  --db-instance-class $db_instance_class \
+  --master-username admin \
+  --master-user-password password \
+  --allocated-storage 20 \
+  --max-allocated-storage $db_max_storage
 
 
-tag_value=value
+aws rds wait db-instance-available --db-instance-identifier $db_name
 
-read -r aws_value < <(aws command describe-something \
-  --filter "Name=tag:Name,Values=$tag_value" \
-  --query "Returned[].AwsValue" \
-  --output text) && echo "AWS Value: $aws_value"
+aws rds describe-db-instances --db-instance-identifier $db_name --query "DBInstances[].DBInstanceStatus"
 ```
 
 </details>
@@ -43,36 +53,81 @@ read -r aws_value < <(aws command describe-something \
 <summary><h2>Validate</h2></summary>
 
 ```bash
-aws ec2 describe-omething--filters "Name=tag:Name,Values=$tag_vale" \
-  --query "Returned[?KeyName=='"$key_name"'].{Name:KeyName,Type:KeyType}" \
+aws rds describe-db-instances --db-instance-identifier $db_name \
+  --query "DBInstances[].{DBInstanceIdentifier:DBInstanceIdentifier,Engine:Engine,EngineVersion:EngineVersion,DBInstanceClass:DBInstanceClass,DBInstanceStatus:DBInstanceStatus,MaxAllocatedStorage:MaxAllocatedStorage}" \
   --output table
 ```
 
 ```bash
-key_name=keyName
-tag_value=value
+db_name=xfusion-rds
+db_engine=mysql
+db_instance_class=db.t3.micro
+db_max_storage=50
 
-read -r aws_value < <(aws command describe-something \
-  --filter "Name=tag:Name,Values=$tag_value" \
-  --query "Returned[].AwsValue" \
-  --output text) && echo "AWS Value: $aws_value"
+read -r instance_id engine engine_version instance_class status max_storage < <(aws rds describe-db-instances \
+  --db-instance-identifier $db_name \
+  --query "DBInstances[0].[DBInstanceIdentifier,Engine,EngineVersion,DBInstanceClass,DBInstanceStatus,MaxAllocatedStorage]" \
+  --output text 2>/dev/null) && echo "Instance: $instance_id, Engine: $engine $engine_version, Class: $instance_class, Status: $status, Max Storage: $max_storage GB"
 
-name_valid=false
+# Validation checks
+instance_exists=false
+engine_valid=false
+class_valid=false
+status_valid=false
+autoscaling_valid=false
 
-[[ "$aws_value" == "$key_name" ]] && name_valid=true
+[[ -n "$instance_id" && "$instance_id" != "None" ]] && instance_exists=true
+[[ "$engine" == "$db_engine" ]] && engine_valid=true
+[[ "$instance_class" == "$db_instance_class" ]] && class_valid=true
+[[ "$status" == "available" ]] && status_valid=true
+[[ "$max_storage" == "$db_max_storage" ]] && autoscaling_valid=true
 
-if [[ "$name_valid" == true ]]; then
+if [[ "$instance_exists" == true ]] && [[ "$engine_valid" == true ]] && [[ "$class_valid" == true ]] && [[ "$status_valid" == true ]] && [[ "$autoscaling_valid" == true ]]; then
   echo "✓ Success"
-  echo "  Key name: $aws_value"
+  echo "  DB Instance: $instance_id"
+  echo "  Engine: $engine $engine_version"
+  echo "  Instance class: $instance_class"
+  echo "  Status: $status"
+  echo "  Max storage (autoscaling threshold): $max_storage GB"
 else
   echo "✗ Fail"
   
-  if [[ "$name_valid" == false ]]; then
-    echo "  ✗ Key name validation failed"
-    echo "    Expected: $key_name"
-    echo "    Got: $aws_value"
+  if [[ "$instance_exists" == false ]]; then
+    echo "  ✗ RDS instance '$db_name' not found"
   else
-    echo "  ✓ Key name validation passed"
+    echo "  ✓ RDS instance exists"
+  fi
+  
+  if [[ "$engine_valid" == false ]]; then
+    echo "  ✗ Engine validation failed"
+    echo "    Expected: $db_engine"
+    echo "    Got: $engine"
+  else
+    echo "  ✓ Engine validation passed"
+  fi
+  
+  if [[ "$class_valid" == false ]]; then
+    echo "  ✗ Instance class validation failed"
+    echo "    Expected: $db_instance_class"
+    echo "    Got: $instance_class"
+  else
+    echo "  ✓ Instance class validation passed"
+  fi
+  
+  if [[ "$status_valid" == false ]]; then
+    echo "  ✗ Instance status validation failed"
+    echo "    Expected: available"
+    echo "    Got: $status"
+  else
+    echo "  ✓ Instance status validation passed"
+  fi
+  
+  if [[ "$autoscaling_valid" == false ]]; then
+    echo "  ✗ Storage autoscaling threshold validation failed"
+    echo "    Expected max storage: $db_max_storage GB"
+    echo "    Got: $max_storage GB"
+  else
+    echo "  ✓ Storage autoscaling validation passed"
   fi
 fi
 ```

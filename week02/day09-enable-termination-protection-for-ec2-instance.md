@@ -1,4 +1,4 @@
-# Day 09 - Enable Termination Protection for EC2 Instance
+# Day 9: Enable Termination Protection for EC2 Instance
 
 ## Task
 
@@ -20,8 +20,8 @@ aws ec2 modify-instance-attribute help
 instance_name=xfusion-ec2
 
 read -r instance_id < <(aws ec2 describe-instances \
-  --filter 'Name=tag:Name,Values=$instance_name' \
-  --query 'Reservations[].Instances[].InstanceId' \
+  --filter "Name=tag:Name,Values=$instance_name" \
+  --query "Reservations[].Instances[].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
 
 aws ec2 modify-instance-attribute \

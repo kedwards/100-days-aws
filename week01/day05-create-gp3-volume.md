@@ -1,4 +1,4 @@
-# Day 05 - Create GP3 Volume
+# Day 05: Create GP3 Volume
 
 ## Task
 

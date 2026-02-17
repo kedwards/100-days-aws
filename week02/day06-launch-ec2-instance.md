@@ -1,4 +1,4 @@
-# Day 6 - Launch EC2 Instance
+# Day 6: Launch EC2 Instance
 
 ## Task
 

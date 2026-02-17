@@ -75,7 +75,7 @@ aws ecr describe-images --repository-name "$repository_name" \
 ```
 
 ```bash
-repository_name=datacenter-ecr
+repository_name=devops-ecr
 image_tag=latest
 
 read -r repo_name repo_uri < <(aws ecr describe-repositories \

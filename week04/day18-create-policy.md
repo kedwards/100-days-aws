@@ -21,15 +21,18 @@ aws iam list-policies help
 ```bash
 policy_name=iampolicy_kirsty
 
-# Create policy document
+# Create policy document for read-only EC2 console access
 cat > /tmp/policy.json << 'POLICY'
 {
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "EC2FullAccess",
+            "Sid": "EC2ReadOnlyAccess",
             "Effect": "Allow",
-            "Action": "ec2:*",
+            "Action": [
+                "ec2:Describe*",
+                "ec2:GetConsole*"
+            ],
             "Resource": "*"
         }
     ]
