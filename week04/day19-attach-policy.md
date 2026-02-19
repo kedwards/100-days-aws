@@ -22,7 +22,7 @@ aws iam list-attached-user-policies help
 user_name=iamuser_john
 policy_name=iampolicy_john
 
-read -r policy_arn < <(aws iam list-policies \
+policy_arn=$(aws iam list-policies \
   --query "Policies[?PolicyName=='$policy_name'].Arn" \
   --output text) && echo "Policy ARN: $policy_arn"
 
@@ -44,10 +44,10 @@ aws iam list-attached-user-policies --user-name "$user_name" \
 ```
 
 ```bash
-read -r attached_policy_arn attached_policy_name < <(aws iam list-attached-user-policies \
+read -r attached_policy_arn attached_policy_name <<< "$(aws iam list-attached-user-policies \
   --user-name "$user_name" \
   --query "AttachedPolicies[?PolicyName=='$policy_name'].[PolicyArn,PolicyName]" \
-  --output text) && echo "Attached policy ARN: $attached_policy_arn, Policy name: $attached_policy_name"
+  --output text)" && echo "Attached policy ARN: $attached_policy_arn, Policy name: $attached_policy_name"
 
 # Check validation
 policy_attached=false

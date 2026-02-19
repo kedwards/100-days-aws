@@ -21,12 +21,12 @@ instance_name=xfusion-ec2
 volume_name=xfusion-volume
 device_name=/dev/sdb
 
-read -r instance_id az < <(aws ec2 describe-instances \
+read -r instance_id az <<< "$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].[InstanceId,Placement.AvailabilityZone]" \
-  --output text) && echo "Instance ID: $instance_id, AZ: $az"
+  --output text)" && echo "Instance ID: $instance_id, AZ: $az"
 
-read -r volume_id < <(aws ec2 describe-volumes \
+volume_id=$(aws ec2 describe-volumes \
   --filters "Name=tag:Name,Values=$volume_name" "Name=availability-zone,Values=$az" \
   --query "Volumes[].VolumeId" \
   --output text) && echo "Volume ID: $volume_id"
@@ -50,10 +50,10 @@ aws ec2 describe-volumes --filters "Name=tag:Name,Values=$volume_name" \
 ```
 
 ```bash
-read -r volume_id attached_instance device state < <(aws ec2 describe-volumes \
+read -r volume_id attached_instance device state <<< "$(aws ec2 describe-volumes \
   --filters "Name=tag:Name,Values=$volume_name" \
   --query "Volumes[0].[VolumeId,Attachments[0].InstanceId,Attachments[0].Device,Attachments[0].State]" \
-  --output text) && echo "Volume ID: $volume_id, Instance: $attached_instance, Device: $device, State: $state"
+  --output text)" && echo "Volume ID: $volume_id, Instance: $attached_instance, Device: $device, State: $state"
 
 volume_exists=false
 attachment_valid=false

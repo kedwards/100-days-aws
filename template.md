@@ -18,7 +18,7 @@ aws command2 help
 ```bash
 tag_value=value
 
-read -r aws_value < <(aws command describe-something \
+aws_value=$(aws command describe-something \
   --filter "Name=tag:Name,Values=$tag_value" \
   --query "Returned[].AwsValue" \
   --output text) && echo "AWS Value: $aws_value"
@@ -39,7 +39,7 @@ aws ec2 describe-omething--filters "Name=tag:Name,Values=$tag_vale" \
 key_name=keyName
 tag_value=value
 
-read -r aws_value < <(aws command describe-something \
+aws_value=$(aws command describe-something \
   --filter "Name=tag:Name,Values=$tag_value" \
   --query "Returned[].AwsValue" \
   --output text) && echo "AWS Value: $aws_value"

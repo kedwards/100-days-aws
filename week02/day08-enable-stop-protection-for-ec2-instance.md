@@ -19,7 +19,7 @@ aws ec2 modify-instance-attribute help
 ```bash
 instance_name=devops-ec2
 
-read -r instance_id < <(aws ec2 describe-instances \
+instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query 'Reservations[].Instances[].InstanceId' \
   --output text) && echo "Instance ID: $instance_id"
@@ -44,7 +44,7 @@ aws ec2 describe-instance-attribute \
 ```
 
 ```bash
-read -r stop_protection < <(aws ec2 describe-instance-attribute \
+stop_protection=$(aws ec2 describe-instance-attribute \
   --instance-id "$instance_id" \
   --attribute disableApiStop \
   --query "DisableApiStop.Value" \

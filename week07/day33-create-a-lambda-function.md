@@ -63,7 +63,7 @@ aws iam create-role \
   --role-name $role_name \
   --assume-role-policy-document file://trust-policy.json
 
-read -r lambda_role_arn < <(aws iam list-roles \
+lambda_role_arn=$(aws iam list-roles \
   --query "Roles[?RoleName=='lambda_execution_role'].Arn" \
   --output text) && echo "Lambda Arn: $lambda_role_arn"
 
@@ -91,21 +91,22 @@ aws lambda invoke --function-name $function_name /tmp/lambda-output.json && cat 
 ```
 
 ```bash
-function_name=nautilus-lambda
+prefix=nautilus
+function_name=$prefix-lambda
 role_name=lambda_execution_role
 expected_body='Welcome to KKE AWS Labs!'
 
 # Check Lambda function
-read -r fn_name runtime role_arn state < <(aws lambda get-function \
+read -r fn_name runtime role_arn state <<< "$(aws lambda get-function \
   --function-name $function_name \
   --query "Configuration.[FunctionName,Runtime,Role,State]" \
-  --output text 2>/dev/null) && echo "Function: $fn_name, Runtime: $runtime, State: $state"
+  --output text 2>/dev/null)"&& echo "Function: $fn_name, Runtime: $runtime, State: $state"
 
 # Check IAM role exists
-read -r iam_role_name iam_role_arn < <(aws iam get-role \
+read -r iam_role_name iam_role_arn <<< "$(aws iam get-role \
   --role-name $role_name \
   --query "Role.[RoleName,Arn]" \
-  --output text 2>/dev/null) && echo "IAM Role: $iam_role_name"
+  --output text 2>/dev/null)"&& echo "IAM Role: $iam_role_name"
 
 # Invoke Lambda function and check response
 aws lambda invoke --function-name $function_name /tmp/lambda-output.json --output text 2>/dev/null

@@ -30,7 +30,7 @@ instance_type=t2.micro
 region=us-east-1
 
 # Get latest Amazon Linux 2023 AMI
-read -r image_id < <(aws ec2 describe-images \
+image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
   --filters 'Name=name,Values=al2023-ami-2023.*-x86_64' \
@@ -38,7 +38,7 @@ read -r image_id < <(aws ec2 describe-images \
   --output text) && echo "Image ID: $image_id"
 
 # Create EC2 instance
-read -r instance_id < <(aws ec2 run-instances \
+instance_id=$(aws ec2 run-instances \
   --image-id "$image_id" \
   --instance-type "$instance_type" \
   --region "$region" \
@@ -47,7 +47,7 @@ read -r instance_id < <(aws ec2 run-instances \
   --output text) && echo "Instance ID: $instance_id"
 
 # Allocate Elastic IP
-read -r allocation_id < <(aws ec2 allocate-address \
+allocation_id=$(aws ec2 allocate-address \
   --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=$eip_name}]" \
   --query "AllocationId" \
   --output text) && echo "Allocation ID: $allocation_id"
@@ -83,15 +83,15 @@ eip_name=nautilus-eip
 instance_type=t2.micro
 region=us-east-1
 
-read -r allocation_id associated_instance public_ip < <(aws ec2 describe-addresses \
+read -r allocation_id associated_instance public_ip <<< "$(aws ec2 describe-addresses \
   --filters "Name=tag:Name,Values=$eip_name" \
   --query "Addresses[0].[AllocationId,InstanceId,PublicIp]" \
-  --output text) && echo "Allocation ID: $allocation_id, Instance: $associated_instance, Public IP: $public_ip"
+  --output text)" && echo "Allocation ID: $allocation_id, Instance: $associated_instance, Public IP: $public_ip"
 
-read -r instance_state instance_public_ip < <(aws ec2 describe-instances \
+read -r instance_state instance_public_ip <<< "$(aws ec2 describe-instances \
   --instance-ids "$instance_id" \
   --query "Reservations[0].Instances[0].[State.Name,PublicIpAddress]" \
-  --output text) && echo "Instance state: $instance_state, Public IP: $instance_public_ip"
+  --output text)" && echo "Instance state: $instance_state, Public IP: $instance_public_ip"
 
 # Check validation
 instance_exists=false

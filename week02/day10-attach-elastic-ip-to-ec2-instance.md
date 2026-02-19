@@ -20,12 +20,12 @@ aws ec2 associate-address help
 instance_name=devops-ec2
 eip_name=devops-ec2-eip
 
-read -r instance_id < <(aws ec2 describe-instances \
+instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
   
-read -r allocation_id < <(aws ec2 describe-addresses \
+allocation_id=$(aws ec2 describe-addresses \
   --filter "Name=tag:Name,Values=$eip_name" \
   --query "Addresses[].AllocationId" \
   --output text) && echo "Allocation ID: $allocation_id"
@@ -48,12 +48,12 @@ aws ec2 describe-addresses --filters "Name=tag:Name,Values=$eip_name" \
 ```
 
 ```bash
-read -r allocation_id associated_instance public_ip < <(aws ec2 describe-addresses \
+read -r allocation_id associated_instance public_ip <<< "$(aws ec2 describe-addresses \
   --filter "Name=tag:Name,Values=$eip_name" \
   --query "Addresses[0].[AllocationId,InstanceId,PublicIp]" \
-  --output text) && echo "Allocation ID: $allocation_id, Instance: $associated_instance, Public IP: $public_ip"
+  --output text)" && echo "Allocation ID: $allocation_id, Instance: $associated_instance, Public IP: $public_ip"
 
-read -r instance_id < <(aws ec2 describe-instances \
+instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"

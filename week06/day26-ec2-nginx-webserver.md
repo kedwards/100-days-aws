@@ -48,14 +48,14 @@ aws ec2 import-key-pair \
   --public-key-material fileb://~/.ssh/id_rsa.pub \
   --region "$region"
 
-read -r image_id < <(aws ec2 describe-images \
+image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
   --filters 'Name=name,Values=ubuntu-*-24.04-amd64*' \
   --query 'reverse(sort_by(Images, &CreationDate))[:1] | [0].ImageId' \
   --output text) && echo "Image ID: $image_id"
 
-read -r default_sg < <(aws ec2 describe-security-groups \
+default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default security group: $default_sg"
 
@@ -100,12 +100,12 @@ aws ec2 describe-instances --filters "Name=tag:Name,Values=$instance_name" \
 instance_name=devops-ec2
 instance_type=t2.micro
 
-read -r instance_id instance_state public_ip < <(aws ec2 describe-instances \
+read -r instance_id instance_state public_ip <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,State.Name,PublicIpAddress]" \
-  --output text) && echo "Instance ID: $instance_id, State: $instance_state, Public IP: $public_ip"
+  --output text)" && echo "Instance ID: $instance_id, State: $instance_state, Public IP: $public_ip"
 
-read -r http_rule < <(aws ec2 describe-security-group-rules \
+http_rule=$(aws ec2 describe-security-group-rules \
   --filters "Name=group-id,Values=$default_sg" \
   --query "SecurityGroupRules[?IsEgress==\`false\` && IpProtocol==\`tcp\` && FromPort==\`80\` && ToPort==\`80\`].SecurityGroupRuleId" \
   --output text) && echo "HTTP rule ID: $http_rule"

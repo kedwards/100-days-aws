@@ -53,23 +53,23 @@ instance_type=t2.micro
 public_subnet_name=reach-devops-pub-subnet
 nat_instance_name=reach-devops-nat-instance
 
-read -r vpc_id < <(aws ec2 describe-vpcs \
+vpc_id=$(aws ec2 describe-vpcs \
   --filter "Name=tag:Name,Values=$vpc_name" \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
-read -r private_subnet_id < <(aws ec2 describe-subnets \
+private_subnet_id=$(aws ec2 describe-subnets \
   --filters "Name=tag:Name,Values=reach-devops-priv-subnet" \
   --query 'Subnets[0].SubnetId' \
   --output text) && echo "priv_subnet_id: $private_subnet_id"
 
-read -r private_route_table_id < <(aws ec2 describe-route-tables \
+private_route_table_id=$(aws ec2 describe-route-tables \
   --filters Name=vpc-id,Values=$vpc_id \
   --query "RouteTables[?\!Routes[?starts_with(GatewayId, 'igw-')]].RouteTableId" \
   --output text \
   --query "RouteTables[?Associations[0].Main].RouteTableId") && echo "Private rtb_id: $private_route_table_id"
 
-read -r private_route_table_id < <(aws ec2 describe-route-tables \
+private_route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$vpc_id" "Name=association.main,Values=true" \
   --query 'RouteTables[0].RouteTableId' --output text) && echo "priv_rtb_id: $private_route_table_id"
 
@@ -78,7 +78,7 @@ aws ec2 describe-subnets --filters Name=vpc-id,Values=$vpc_id --query Subnets[*]
 
 cidr_block=10.0.2.0/24
 
-read -r public_subnet_id < <(aws ec2 create-subnet \
+public_subnet_id=$(aws ec2 create-subnet \
   --vpc-id $vpc_id \
   --cidr-block $cidr_block \
   --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=$public_subnet_name}]" \
@@ -89,7 +89,7 @@ aws ec2 modify-subnet-attribute \
   --subnet-id "$public_subnet_id" \
   --map-public-ip-on-launch
 
-read -r igw_id < <(aws ec2 create-internet-gateway \
+igw_id=$(aws ec2 create-internet-gateway \
   --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=reach-devops-igw}]" \
   --query "InternetGateway.InternetGatewayId" \
   --output text) && echo "Internet Gateway ID: $igw_id"
@@ -98,7 +98,7 @@ aws ec2 attach-internet-gateway \
   --vpc-id $vpc_id \
   --internet-gateway-id $igw_id
 
-read -r public_route_table_id < <(aws ec2 create-route-table \
+public_route_table_id=$(aws ec2 create-route-table \
   --vpc-id $vpc_id \
   --query 'RouteTable.RouteTableId' --output text) && echo "pub_rtb_id: $public_route_table_id" \
   --tag-specifications "ResourceType=route,Tags=[{Key=Name,Value=reach-devops-pub-route}]"
@@ -112,7 +112,7 @@ aws ec2 create-route \
   --destination-cidr-block 0.0.0.0/0 \
   --gateway-id $igw_id
 
-read -r nat_sg_id < <(aws ec2 create-security-group \
+nat_sg_id=$(aws ec2 create-security-group \
   --vpc-id $vpc_id \
   --group-name reach-nat-security-group \
   --description "My nat security group" \
@@ -159,7 +159,7 @@ primary_interface=\$(ip route show default | awk '{print \$5}')
 service iptables save
 EOF
 
-read -r nat_instance_id < <(aws ec2 run-instances \
+nat_instance_id=$(aws ec2 run-instances \
   --image-id \
     resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
     --instance-type $instance_type \
@@ -189,7 +189,7 @@ aws ec2 create-route \
   --instance-id $nat_instance_id
 
 
-read -r default_security_group_id < <(aws ec2 describe-security-groups \
+default_security_group_id=$(aws ec2 describe-security-groups \
   --filters Name=group-name,Values=default Name=vpc-id,Values=$vpc_id \
   --query 'SecurityGroups[].GroupId' \
   --output text) && echo "Default Security Group ID: $default_security_group_id"i
@@ -233,7 +233,7 @@ aws ec2 associate-route-table \
   --route-table-id "$PUB_RTB_ID" \
   --subnet-id "$PUB_SUBNET_ID"
 
-read -r public_route_table_id < <(aws ec2 create-route-table \
+public_route_table_id=$(aws ec2 create-route-table \
   --vpc-id $vpc_id \
   --query 'RouteTable.RouteTableId' --output text) && echo "pub_rtb_id: $public_route_table_id"
 
@@ -246,7 +246,7 @@ aws ec2 create-route \
   --destination-cidr-block 0.0.0.0/0 \
   --gateway-id $igw_id
 
-read -r private_route_table_id < <(aws ec2 describe-route-tables \
+private_route_table_id=$(aws ec2 describe-route-tables \
   --filters Name=vpc-id,Values=$vpc_id \
   --query "RouteTables[?\!Routes[?starts_with(GatewayId, 'igw-')]].RouteTableId" \
   --output text \
@@ -278,70 +278,70 @@ s3_bucket_name=xfusion-nat-30013
 test_file=xfusion-test.txt
 
 # Get VPC ID
-read -r vpc_id < <(aws ec2 describe-vpcs \
+vpc_id=$(aws ec2 describe-vpcs \
   --filters "Name=tag:Name,Values=$vpc_name" \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
 # Check public subnet
-read -r public_subnet_id public_subnet_map_ip < <(aws ec2 describe-subnets \
+read -r public_subnet_id public_subnet_map_ip <<< "$(aws ec2 describe-subnets \
   --filters "Name=tag:Name,Values=$public_subnet_name" "Name=vpc-id,Values=$vpc_id" \
   --query "Subnets[0].[SubnetId,MapPublicIpOnLaunch]" \
-  --output text) && echo "Public Subnet ID: $public_subnet_id, Auto-assign IP: $public_subnet_map_ip"
+  --output text)" && echo "Public Subnet ID: $public_subnet_id, Auto-assign IP: $public_subnet_map_ip"
 
 # Check NAT instance
-read -r nat_instance_id nat_instance_state nat_source_dest_check nat_public_ip < <(aws ec2 describe-instances \
+read -r nat_instance_id nat_instance_state nat_source_dest_check nat_public_ip <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$nat_instance_name" "Name=instance-state-name,Values=running" \
   --query "Reservations[0].Instances[0].[InstanceId,State.Name,SourceDestCheck,PublicIpAddress]" \
-  --output text) && echo "NAT Instance: $nat_instance_id, State: $nat_instance_state, SourceDestCheck: $nat_source_dest_check, Public IP: $nat_public_ip"
+  --output text)" && echo "NAT Instance: $nat_instance_id, State: $nat_instance_state, SourceDestCheck: $nat_source_dest_check, Public IP: $nat_public_ip"
 
 # Check NAT instance security group
-read -r nat_sg_id < <(aws ec2 describe-instances \
+nat_sg_id=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$nat_instance_name" \
   --query "Reservations[0].Instances[0].SecurityGroups[0].GroupId" \
   --output text) && echo "NAT Security Group ID: $nat_sg_id"
 
-read -r nat_sg_name < <(aws ec2 describe-security-groups \
+nat_sg_name=$(aws ec2 describe-security-groups \
   --group-ids "$nat_sg_id" \
   --query "SecurityGroups[0].GroupName" \
   --output text 2>/dev/null) && echo "NAT Security Group Name: $nat_sg_name"
 
 # Check Internet Gateway
-read -r igw_id igw_attached_vpc < <(aws ec2 describe-internet-gateways \
+read -r igw_id igw_attached_vpc <<< "$(aws ec2 describe-internet-gateways \
   --filters "Name=attachment.vpc-id,Values=$vpc_id" \
   --query "InternetGateways[0].[InternetGatewayId,Attachments[0].VpcId]" \
-  --output text) && echo "Internet Gateway: $igw_id, Attached to: $igw_attached_vpc"
+  --output text)" && echo "Internet Gateway: $igw_id, Attached to: $igw_attached_vpc"
 
 # Check private route table has route to NAT instance
-read -r private_subnet_id < <(aws ec2 describe-subnets \
+private_subnet_id=$(aws ec2 describe-subnets \
   --filters "Name=tag:Name,Values=xfusion-priv-subnet" "Name=vpc-id,Values=$vpc_id" \
   --query "Subnets[0].SubnetId" \
   --output text) && echo "Private Subnet ID: $private_subnet_id"
 
-read -r private_route_table_id < <(aws ec2 describe-route-tables \
+private_route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=association.subnet-id,Values=$private_subnet_id" \
   --query "RouteTables[0].RouteTableId" \
   --output text)
 
 # If no explicit association, check main route table
 if [[ -z "$private_route_table_id" || "$private_route_table_id" == "None" ]]; then
-  read -r private_route_table_id < <(aws ec2 describe-route-tables \
+  private_route_table_id=$(aws ec2 describe-route-tables \
     --filters "Name=vpc-id,Values=$vpc_id" "Name=association.main,Values=true" \
     --query "RouteTables[0].RouteTableId" \
     --output text)
 fi
 echo "Private Route Table ID: $private_route_table_id"
 
-read -r nat_route_target < <(aws ec2 describe-route-tables \
+nat_route_target=$(aws ec2 describe-route-tables \
   --route-table-ids "$private_route_table_id" \
   --query "RouteTables[0].Routes[?DestinationCidrBlock=='0.0.0.0/0'].InstanceId" \
   --output text) && echo "NAT route target: $nat_route_target"
 
 # Check private EC2 instance
-read -r private_instance_id private_instance_state < <(aws ec2 describe-instances \
+read -r private_instance_id private_instance_state <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$private_instance_name" "Name=instance-state-name,Values=running" \
   --query "Reservations[0].Instances[0].[InstanceId,State.Name]" \
-  --output text) && echo "Private Instance: $private_instance_id, State: $private_instance_state"
+  --output text)" && echo "Private Instance: $private_instance_id, State: $private_instance_state"
 
 # Check S3 bucket for test file (indicates successful internet access)
 file_exists=false

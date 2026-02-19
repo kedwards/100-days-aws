@@ -20,12 +20,12 @@ aws ec2 attach-network-interface help
 instance_name=nautilus-ec2
 eni_name=nautilus-eni
 
-read -r instance_id < <(aws ec2 describe-instances \
+instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
 
-read -r eni_id < <(aws ec2 describe-network-interfaces \
+eni_id=$(aws ec2 describe-network-interfaces \
   --filters "Name=tag:Name,Values=$eni_name" \
   --query "NetworkInterfaces[].NetworkInterfaceId" \
   --output text) && echo "ENI ID: $eni_id"
@@ -50,10 +50,10 @@ aws ec2 describe-network-interfaces \
 ```
 
 ```bash
-read -r attached_eni attachment_status < <(aws ec2 describe-network-interfaces \
+read -r attached_eni attachment_status <<< "$(aws ec2 describe-network-interfaces \
   --filters "Name=network-interface-id,Values=$eni_id" \
   --query "NetworkInterfaces[0].[Attachment.InstanceId,Attachment.Status]" \
-  --output text) && echo "Attached to instance: $attached_eni, Status: $attachment_status"
+  --output text)" && echo "Attached to instance: $attached_eni, Status: $attachment_status"
 
 # Check validation
 eni_attached=false

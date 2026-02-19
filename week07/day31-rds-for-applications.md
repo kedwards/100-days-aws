@@ -59,15 +59,16 @@ aws rds describe-db-instances --db-instance-identifier $db_name \
 ```
 
 ```bash
-db_name=xfusion-rds
+prefix=datacenter
+db_name=$prefix-rds
 db_engine=mysql
 db_instance_class=db.t3.micro
 db_max_storage=50
 
-read -r instance_id engine engine_version instance_class status max_storage < <(aws rds describe-db-instances \
+read -r instance_id engine engine_version instance_class status max_storage <<< "$(aws rds describe-db-instances \
   --db-instance-identifier $db_name \
   --query "DBInstances[0].[DBInstanceIdentifier,Engine,EngineVersion,DBInstanceClass,DBInstanceStatus,MaxAllocatedStorage]" \
-  --output text 2>/dev/null) && echo "Instance: $instance_id, Engine: $engine $engine_version, Class: $instance_class, Status: $status, Max Storage: $max_storage GB"
+  --output text 2>/dev/null)"&& echo "Instance: $instance_id, Engine: $engine $engine_version, Class: $instance_class, Status: $status, Max Storage: $max_storage GB"
 
 # Validation checks
 instance_exists=false

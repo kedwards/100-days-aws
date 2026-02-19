@@ -27,11 +27,11 @@ aws ec2 describe-security-group-rules help
 group_name="nautilus-sg"
 description="Security group for Nautilus App Servers"
 
-read -r vpc_id < <(aws ec2 describe-vpcs \
+vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[?IsDefault].VpcId" \
   --output text) && echo "Default VPC ID: $vpc_id"
 
-read -r group_id < <(aws ec2 create-security-group \
+group_id=$(aws ec2 create-security-group \
   --description "$description" \
   --group-name "$group_name" \
   --vpc-id "$vpc_id" \
@@ -60,7 +60,7 @@ aws ec2 describe-security-group-rules --filters "Name=group-id,Values=$group_id"
 ```
 
 ```bash
-read -r desc < <(aws ec2 describe-security-groups \
+desc=$(aws ec2 describe-security-groups \
   --group-names "$group_name" \
   --query "SecurityGroups[?GroupName=='"$group_name"'].Description" \
   --output text) && echo "Security Group Description: $desc"

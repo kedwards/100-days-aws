@@ -51,11 +51,11 @@ load_balancer_name="$prefix-alb"
 target_group_name="$prefix-tg"
 region=us-east-1
 
-read -r vpc_id < <(aws ec2 describe-vpcs \
+vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[].VpcId" \
   --output text) && echo "Vpc Id: $vpc_id"
 
-read -r default_sg_id < <(aws ec2 describe-security-groups \
+default_sg_id=$(aws ec2 describe-security-groups \
   --filter Name=vpc-id,Values=$vpc_id \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default Security Group Id: $default_sg_id"
@@ -66,7 +66,7 @@ aws ec2 authorize-security-group-ingress \
   --port 80 \
   --cidr *******/0
 
-read -r ec2_security_group_id < <(aws ec2 create-security-group \
+ec2_security_group_id=$(aws ec2 create-security-group \
   --group-name $security_group_name \
   --description "Security group for $prefix" \
   --vpc-id "$vpc_id" \
@@ -91,7 +91,7 @@ ubuntu_image=resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/curre
 # Amazon Linux 2023 - resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 
 amazon_image=resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
 
-read -r instance_id < <(aws ec2 run-instances \
+instance_id=$(aws ec2 run-instances \
   --image-id $ubuntu_image \
   --instance-type "$instance_type" \
   --region "$region" \
@@ -107,19 +107,19 @@ read -r instance_id < <(aws ec2 run-instances \
 
 aws ec2 wait instance-running --instance-ids "$instance_id"
 
-read -r subnets < <(aws ec2 describe-subnets \
+subnets=$(aws ec2 describe-subnets \
   --filter Name=vpc-id,Values="$vpc_id" \
   --query "Subnets[].SubnetId" \
   --output text) && echo "Subnets: ${subnets[@]}"
 
-read -r alb_arn < <(aws elbv2 create-load-balancer \
+alb_arn=$(aws elbv2 create-load-balancer \
   --name $load_balancer_name \
   --subnets ${subnets} \
   --security-groups $default_sg_id \
   --query "LoadBalancers[0].LoadBalancerArn" \
   --output text) && echo "ALB ARN: $alb_arn"
 
-read -r target_group_arn < <(aws elbv2 create-target-group \
+target_group_arn=$(aws elbv2 create-target-group \
   --name $target_group_name \
   --protocol HTTP \
   --port 80 \
@@ -134,7 +134,7 @@ aws elbv2 create-listener \
   --port 80 \
   --default-actions Type=forward,TargetGroupArn=$target_group_arn
 
-read -r alb_dns_name < <(aws elbv2 describe-load-balancers \
+alb_dns_name=$(aws elbv2 describe-load-balancers \
   --query "LoadBalancers[?LoadBalancerName=='$load_balancer_name'].DNSName" \
   --output text) && echo "ALB DNS: $alb_dns_name"
 
@@ -171,33 +171,33 @@ load_balancer_name="$prefix-alb"
 target_group_name="$prefix-tg"
 
 # Check EC2 instance
-read -r ec2_id ec2_state ec2_sg < <(aws ec2 describe-instances \
+read -r ec2_id ec2_state ec2_sg <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,State.Name,SecurityGroups[0].GroupName]" \
-  --output text 2>/dev/null) && echo "EC2: $ec2_id, State: $ec2_state, Security Group: $ec2_sg"
+  --output text 2>/dev/null)"&& echo "EC2: $ec2_id, State: $ec2_state, Security Group: $ec2_sg"
 
 # Check security group exists
-read -r sg_id sg_name < <(aws ec2 describe-security-groups \
+read -r sg_id sg_name <<< "$(aws ec2 describe-security-groups \
   --filters "Name=group-name,Values=$security_group_name" \
   --query "SecurityGroups[0].[GroupId,GroupName]" \
-  --output text 2>/dev/null) && echo "Security Group: $sg_id, Name: $sg_name"
+  --output text 2>/dev/null)"&& echo "Security Group: $sg_id, Name: $sg_name"
 
 # Check ALB
-read -r alb_name alb_state alb_dns < <(aws elbv2 describe-load-balancers \
+read -r alb_name alb_state alb_dns <<< "$(aws elbv2 describe-load-balancers \
   --names $load_balancer_name \
   --query "LoadBalancers[0].[LoadBalancerName,State.Code,DNSName]" \
-  --output text 2>/dev/null) && echo "ALB: $alb_name, State: $alb_state, DNS: $alb_dns"
+  --output text 2>/dev/null)"&& echo "ALB: $alb_name, State: $alb_state, DNS: $alb_dns"
 
 # Check target group
-read -r tg_arn tg_name < <(aws elbv2 describe-target-groups \
+read -r tg_arn tg_name <<< "$(aws elbv2 describe-target-groups \
   --names $target_group_name \
   --query "TargetGroups[0].[TargetGroupArn,TargetGroupName]" \
-  --output text 2>/dev/null) && echo "Target Group: $tg_name"
+  --output text 2>/dev/null)"&& echo "Target Group: $tg_name"
 
 # Check target health
 target_health=""
 if [[ -n "$tg_arn" && "$tg_arn" != "None" ]]; then
-  read -r target_health < <(aws elbv2 describe-target-health \
+  target_health=$(aws elbv2 describe-target-health \
     --target-group-arn $tg_arn \
     --query "TargetHealthDescriptions[0].TargetHealth.State" \
     --output text 2>/dev/null) && echo "Target Health: $target_health"

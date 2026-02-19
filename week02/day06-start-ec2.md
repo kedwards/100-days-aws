@@ -34,14 +34,14 @@ aws ec2 create-key-pair --key-name "$key_name" \
   --key-type "$key_type" \
   --tag-specifications "ResourceType=key-pair,Tags=[{Key=Name,Value=$key_name}]"
 
-read -r image_id < <(aws ec2 describe-images \
+image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
   --filters 'Name=name,Values=al2023-ami-2023.*-x86_64' \
   --query 'reverse(sort_by(Images, &CreationDate))[:1] | [0].ImageId' \
   --output text) && echo "Image ID: $image_id"
 
-read -r default_sg < <(aws ec2 describe-security-groups \
+default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default security group: $default_sg"
 
@@ -66,19 +66,19 @@ aws ec2 describe-instances \
 ```
 
 ```bash
-read -r id type instance_key image_id az sg_ids < <(aws ec2 describe-instances \
+read -r id type instance_key image_id az sg_ids <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,InstanceType,KeyName,ImageId,Placement.AvailabilityZone,SecurityGroups[*].GroupId|join(',', @)]" \
-  --output text) && echo "Instance ID: $id, Type: $type, Key: $instance_key, Image: $image_id, AZ: $az, SG: $sg_ids"
+  --output text)" && echo "Instance ID: $id, Type: $type, Key: $instance_key, Image: $image_id, AZ: $az, SG: $sg_ids"
 
 instance_region="${az%?}"
 
-read -r ami_name < <(aws ec2 describe-images \
+ami_name=$(aws ec2 describe-images \
   --image-ids "$image_id" \
   --query "Images[0].Name" \
   --output text) && echo "AMI name: $ami_name"
 
-read -r default_sg < <(aws ec2 describe-security-groups \
+default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default security group: $default_sg"
 

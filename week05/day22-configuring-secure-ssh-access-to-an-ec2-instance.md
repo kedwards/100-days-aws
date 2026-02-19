@@ -38,7 +38,7 @@ aws ec2 import-key-pair \
   --region "$region"
 
 # Get default security group
-read -r default_sg < <(aws ec2 describe-security-groups \
+default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default security group: $default_sg"
 
@@ -50,7 +50,7 @@ aws ec2 authorize-security-group-ingress \
   --cidr *******/0
 
 # Get latest Amazon Linux 2023 AMI
-read -r image_id < <(aws ec2 describe-images \
+image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
   --filters 'Name=name,Values=al2023-ami-2023.*-x86_64' \
@@ -85,12 +85,12 @@ instance_type=t2.micro
 region=us-east-1
 key_name=aws-client-key
 
-read -r instance_id instance_key instance_sg instance_state public_ip < <(aws ec2 describe-instances \
+read -r instance_id instance_key instance_sg instance_state public_ip <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,KeyName,SecurityGroups[0].GroupId,State.Name,PublicIpAddress]" \
-  --output text) && echo "Instance ID: $instance_id, Key: $instance_key, SG: $instance_sg, State: $instance_state, IP: $public_ip"
+  --output text)" && echo "Instance ID: $instance_id, Key: $instance_key, SG: $instance_sg, State: $instance_state, IP: $public_ip"
 
-read -r ssh_rule < <(aws ec2 describe-security-group-rules \
+ssh_rule=$(aws ec2 describe-security-group-rules \
   --filters "Name=group-id,Values=$instance_sg" \
   --query "SecurityGroupRules[?IsEgress==\`false\` && IpProtocol==\`tcp\` && FromPort==\`22\` && ToPort==\`22\`].SecurityGroupRuleId" \
   --output text) && echo "SSH rule ID: $ssh_rule"

@@ -57,7 +57,7 @@ aws iam create-role \
   --assume-role-policy-document file:///tmp/trust-policy.json
 
 # Get policy ARN
-read -r policy_arn < <(aws iam list-policies \
+policy_arn=$(aws iam list-policies \
   --query "Policies[?PolicyName=='$policy_name'].Arn" \
   --output text) && echo "Policy ARN: $policy_arn"
 
@@ -80,14 +80,14 @@ aws iam list-attached-role-policies --role-name "$role_name" \
 ```
 
 ```bash
-read -r role_arn < <(aws iam get-role --role-name "$role_name" \
+role_arn=$(aws iam get-role --role-name "$role_name" \
   --query "Role.Arn" \
   --output text) && echo "Role ARN: $role_arn"
 
-read -r attached_policy_arn attached_policy_name < <(aws iam list-attached-role-policies \
+read -r attached_policy_arn attached_policy_name <<< "$(aws iam list-attached-role-policies \
   --role-name "$role_name" \
   --query "AttachedPolicies[?PolicyName=='$policy_name'].[PolicyArn,PolicyName]" \
-  --output text) && echo "Attached policy ARN: $attached_policy_arn, Policy name: $attached_policy_name"
+  --output text)" && echo "Attached policy ARN: $attached_policy_arn, Policy name: $attached_policy_name"
 
 # Check validation
 role_exists=false

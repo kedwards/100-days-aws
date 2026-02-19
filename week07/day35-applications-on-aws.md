@@ -46,11 +46,11 @@ db_master_password=password
 db_storage_type="gp2"
 ec2_instance_name=$prefix-ec2
 
-read -r vpc_id < <(aws ec2 describe-vpcs \
+vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
-read -r db_route_table_id < <(aws ec2 create-route-table \
+db_route_table_id=$(aws ec2 create-route-table \
   --vpc-id $vpc_id \
   --query "RouteTable.RouteTableId" \
   --output text) && echo "Created Route Table: $db_route_table_id"
@@ -83,7 +83,7 @@ for subnet_id in "${subnet_ids[@]}"; do
     --subnet-id $subnet_id
 done
 
-read -r db_subnet_group_name < <(aws rds create-db-subnet-group \
+db_subnet_group_name=$(aws rds create-db-subnet-group \
   --db-subnet-group-name DevOpsDBSubnetGroup \
   --db-subnet-group-description "Subnet group for DevOps RDS instance" \
   --subnet-ids ${subnet_ids[0]} ${subnet_ids[1]} \
@@ -97,7 +97,7 @@ read db_security_group_id < <(aws ec2 create-security-group \
   --query "GroupId" \
   --output text) && echo "Created Security Group: $db_security_group_id"
 
-read -r ec2_security_group_id < <(aws ec2 describe-instances \
+ec2_security_group_id=$(aws ec2 describe-instances \
   --filter Name=tag:Name,Values=$ec2_instance_name \
   --query "Reservations[].Instances[].SecurityGroups[].GroupId" \
   --output text) && echo "EC2 Security Group: $ec2_security_group_id"
@@ -108,7 +108,7 @@ aws ec2 authorize-security-group-ingress \
   --port 3306 \
   --source-group $ec2_security_group_id
 
-read -r ec2_security_group_id < <(aws ec2 describe-security-groups \
+ec2_security_group_id=$(aws ec2 describe-security-groups \
   --filters "Name=group-name,Values=default" \
   --query "SecurityGroups[].GroupId" \
   --output text) && echo "Security Group: $ec2_security_group_id"
@@ -146,7 +146,7 @@ cat ~/.ssh/id_rsa.pub
 aws rds wait db-instance-available --db-instance-identifier $db_instance_identifier
 
 # Get the RDS endpoint
-read -r db_endpoint < <(aws rds describe-db-instances \
+db_endpoint=$(aws rds describe-db-instances \
   --db-instance-identifier $db_instance_identifier \
   --query "DBInstances[0].Endpoint.Address" \
   --output text) && echo "RDS Endpoint: $db_endpoint"
@@ -159,7 +159,7 @@ sed -i \
   -e "s|<dbhost>|${db_endpoint}|g" index.php
 
 # Get EC2 public IP
-read -r public_ip_address < <(aws ec2 describe-instances \
+public_ip_address=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$ec2_instance_name" \
   --query "Reservations[0].Instances[0].PublicIpAddress" \
   --output text) && echo "Public IP: $public_ip_address"
@@ -199,19 +199,19 @@ db_storage_type="gp2"
 ec2_instance_name=$prefix-ec2
 
 # Check RDS instance
-read -r rds_id rds_engine rds_version rds_class rds_status rds_storage_type rds_endpoint < <(aws rds describe-db-instances \
+read -r rds_id rds_engine rds_version rds_class rds_status rds_storage_type rds_endpoint <<< "$(aws rds describe-db-instances \
   --db-instance-identifier $db_instance_identifier \
   --query "DBInstances[0].[DBInstanceIdentifier,Engine,EngineVersion,DBInstanceClass,DBInstanceStatus,StorageType,Endpoint.Address]" \
-  --output text 2>/dev/null) && echo "RDS: $rds_id, Engine: $rds_engine $rds_version, Class: $rds_class, Status: $rds_status, Endpoint: $rds_endpoint"
+  --output text 2>/dev/null)"&& echo "RDS: $rds_id, Engine: $rds_engine $rds_version, Class: $rds_class, Status: $rds_status, Endpoint: $rds_endpoint"
 
 # Check EC2 instance
-read -r ec2_id ec2_state ec2_public_ip < <(aws ec2 describe-instances \
+read -r ec2_id ec2_state ec2_public_ip <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$ec2_instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,State.Name,PublicIpAddress]" \
-  --output text 2>/dev/null) && echo "EC2: $ec2_id, State: $ec2_state, Public IP: $ec2_public_ip"
+  --output text 2>/dev/null)"&& echo "EC2: $ec2_id, State: $ec2_state, Public IP: $ec2_public_ip"
 
 # Check security group rules for port 3306 and 80
-read -r security_group_id < <(aws ec2 describe-instances \
+security_group_id=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$ec2_instance_name" \
   --query "Reservations[0].Instances[0].SecurityGroups[0].GroupId" \
   --output text 2>/dev/null) && echo "Security Group: $security_group_id"

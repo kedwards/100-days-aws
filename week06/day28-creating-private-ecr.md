@@ -25,10 +25,10 @@ repository_name=devops-ecr
 region=us-east-1
 
 # Create ECR repository
-read -r registry_id repository_uri < <(aws ecr create-repository \
+read -r registry_id repository_uri <<< "$(aws ecr create-repository \
   --repository-name "$repository_name" \
   --query "repository.[registryId,repositoryUri]" \
-  --output text) && echo "Registry ID: $registry_id, Repository URI: $repository_uri"
+  --output text)" && echo "Registry ID: $registry_id, Repository URI: $repository_uri"
 
 # Authenticate Docker to ECR
 aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$registry_id.dkr.ecr.$region.amazonaws.com"
@@ -78,16 +78,16 @@ aws ecr describe-images --repository-name "$repository_name" \
 repository_name=devops-ecr
 image_tag=latest
 
-read -r repo_name repo_uri < <(aws ecr describe-repositories \
+read -r repo_name repo_uri <<< "$(aws ecr describe-repositories \
   --repository-names "$repository_name" \
   --query "repositories[0].[repositoryName,repositoryUri]" \
-  --output text 2>/dev/null) && echo "Repository: $repo_name, URI: $repo_uri"
+  --output text 2>/dev/null)"&& echo "Repository: $repo_name, URI: $repo_uri"
 
-read -r image_tags image_pushed_ts < <(aws ecr describe-images \
+read -r image_tags image_pushed_ts <<< "$(aws ecr describe-images \
   --repository-name "$repository_name" \
   --image-ids imageTag="$image_tag" \
   --query "imageDetails[0].[join(',',imageTags),imagePushedAt]" \
-  --output text 2>/dev/null)
+  --output text 2>/dev/null)"
 
 image_pushed=$(date -d "@${image_pushed_ts%.*}" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "$image_pushed_ts")
 echo "Image tags: $image_tags, Pushed: $image_pushed"

@@ -24,7 +24,7 @@ aws ec2 describe-images help
 instance_name=datacenter-ec2
 ami_name=datacenter-ec2-ami
 
-read -r instance_id < <(aws ec2 describe-instances \
+instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
@@ -52,10 +52,10 @@ aws ec2 describe-images --owners self \
 ```
 
 ```bash
-read -r image_id image_name state < <(aws ec2 describe-images --owners self \
+read -r image_id image_name state <<< "$(aws ec2 describe-images --owners self \
   --filters "Name=name,Values=$ami_name" \
   --query "Images[0].[ImageId,Name,State]" \
-  --output text) && echo "Image ID: $image_id, Name: $image_name, State: $state"
+  --output text)" && echo "Image ID: $image_id, Name: $image_name, State: $state"
 
 image_exists=false
 name_valid=false

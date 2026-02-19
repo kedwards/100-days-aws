@@ -51,7 +51,7 @@ aws iam create-policy \
 
 
 ```bash
-read -r policy_arn < <(aws iam list-policies --scope Local \
+policy_arn=$(aws iam list-policies --scope Local \
   --query "Policies[?PolicyName=='$policy_name'].Arn" \
   --output text) && echo "Policy ARN: $policy_arn"
 
@@ -61,9 +61,9 @@ aws iam get-policy --policy-arn "$policy_arn" \
 ```
 
 ```bash
-read -r policy_arn retrieved_name < <(aws iam list-policies --scope Local \
+read -r policy_arn retrieved_name <<< "$(aws iam list-policies --scope Local \
   --query "Policies[?PolicyName=='$policy_name'].[Arn,PolicyName]" \
-  --output text) && echo "Policy ARN: $policy_arn, Policy name: $retrieved_name"
+  --output text)" && echo "Policy ARN: $policy_arn, Policy name: $retrieved_name"
 
 # Check validation
 policy_exists=false

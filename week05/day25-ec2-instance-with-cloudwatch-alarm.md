@@ -37,7 +37,7 @@ alarm_metric=CPUUtilization
 alarm_statistic=Average
 alarm_topic=xfusion-sns-topic
 
-read -r alarm_topic_arn < <(aws sns create-topic \
+alarm_topic_arn=$(aws sns create-topic \
   --name xfusion-sns-topic \
   --query "TopicArn" \
   --output text) && echo "SNS Topic ARN: $alarm_topic_arn"
@@ -73,7 +73,7 @@ aws ec2 run-instances \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value="$instance_name"}]" \
   --user-data file://user-data.sh
 
-read -r sns_topic_arn < <(aws sns list-topics \
+sns_topic_arn=$(aws sns list-topics \
   --query "Topics[?contains(TopicArn, '$alarm_topic')].TopicArn" \
   --output text) && echo "SNS Topic ARN: $sns_topic_arn"
 
@@ -112,22 +112,22 @@ aws cloudwatch describe-alarms --alarm-names "$alarm_name" \
 ```
 
 ```bash
-read -r instance_id instance_state < <(aws ec2 describe-instances \
+read -r instance_id instance_state <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,State.Name]" \
-  --output text) && echo "Instance ID: $instance_id, State: $instance_state"
+  --output text)" && echo "Instance ID: $instance_id, State: $instance_state"
 
-read -r alarm_state alarm_threshold alarm_metric alarm_namespace < <(aws cloudwatch describe-alarms \
+read -r alarm_state alarm_threshold alarm_metric alarm_namespace <<< "$(aws cloudwatch describe-alarms \
   --alarm-names "$alarm_name" \
   --query "MetricAlarms[0].[StateValue,Threshold,MetricName,Namespace]" \
-  --output text) && echo "Alarm state: $alarm_state, Threshold: $alarm_threshold, Metric: $alarm_metric, Namespace: $alarm_namespace"
+  --output text)" && echo "Alarm state: $alarm_state, Threshold: $alarm_threshold, Metric: $alarm_metric, Namespace: $alarm_namespace"
 
-read -r alarm_dimensions < <(aws cloudwatch describe-alarms \
+alarm_dimensions=$(aws cloudwatch describe-alarms \
   --alarm-names "$alarm_name" \
   --query "MetricAlarms[0].Dimensions[?Name=='InstanceId'].Value" \
   --output text) && echo "Alarm monitoring instance: $alarm_dimensions"
 
-read -r alarm_actions < <(aws cloudwatch describe-alarms \
+alarm_actions=$(aws cloudwatch describe-alarms \
   --alarm-names "$alarm_name" \
   --query "MetricAlarms[0].AlarmActions[0]" \
   --output text) && echo "Alarm action: $alarm_actions"

@@ -41,7 +41,7 @@ All day files must follow the template structure in `template.md`:
 expected_variable=value
 
 # Query AWS resources
-read -r actual_value < <(aws ... --query "..." --output text) && echo "Value: $actual_value"
+actual_value=$(aws ... --query "..." --output text) && echo "Value: $actual_value"
 
 # Validation checks
 valid=false

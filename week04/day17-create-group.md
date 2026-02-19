@@ -37,9 +37,9 @@ aws iam get-group --group-name "$group_name" \
 ```
 
 ```bash
-read -r retrieved_groupname group_id < <(aws iam get-group --group-name "$group_name" \
+read -r retrieved_groupname group_id <<< "$(aws iam get-group --group-name "$group_name" \
   --query "Group.[GroupName,GroupId]" \
-  --output text) && echo "Group name: $retrieved_groupname, Group ID: $group_id"
+  --output text)" && echo "Group name: $retrieved_groupname, Group ID: $group_id"
 
 # Check validation
 group_exists=false

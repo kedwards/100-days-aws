@@ -73,7 +73,7 @@ aws s3api create-bucket \
   --acl private \
   --object-ownership BucketOwnerEnforced
 
-read -r role_arn < <(aws iam create-role \
+role_arn=$(aws iam create-role \
   --role-name $role_name \
   --assume-role-policy-document '{
     "Version": "2012-10-17",
@@ -86,7 +86,7 @@ read -r role_arn < <(aws iam create-role \
   --query 'Role.Arn' \
   --output text) && echo "Role ARN: $role_arn"
 
-read -r policy_arn < <(aws iam create-policy \
+policy_arn=$(aws iam create-policy \
   --policy-name $role_name-s3-policy \
   --policy-document '{
     "Version": "2012-10-17",
@@ -106,7 +106,7 @@ aws iam attach-role-policy \
   --role-name $role_name \
   --policy-arn $policy_arn
 
-read -r instance_profile_arn < <(aws iam create-instance-profile \
+instance_profile_arn=$(aws iam create-instance-profile \
   --instance-profile-name $role_name \
   --query 'InstanceProfile.Arn' \
   --output text) && echo "Instance Profile ARN: $instance_profile_arn"
@@ -115,10 +115,10 @@ aws iam add-role-to-instance-profile \
   --instance-profile-name $role_name \
   --role-name $role_name
 
-read -r public_ip instance_id < <(aws ec2 describe-instances \
+read -r public_ip instance_id <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].[PublicIpAddress,InstanceId]" \
-  --output text) && echo "Instance ID: $instance_id, Public IP: $public_ip"
+  --output text)" && echo "Instance ID: $instance_id, Public IP: $public_ip"
 
 aws ec2 associate-iam-instance-profile \
   --instance-id $instance_id \
@@ -154,10 +154,10 @@ bucket_name=$prefix-s3-17577
 role_name=$prefix-role
 
 # Check EC2 instance
-read -r instance_id instance_state public_ip < <(aws ec2 describe-instances \
+read -r instance_id instance_state public_ip <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,State.Name,PublicIpAddress]" \
-  --output text 2>/dev/null) && echo "EC2: $instance_id, State: $instance_state, Public IP: $public_ip"
+  --output text 2>/dev/null)"&& echo "EC2: $instance_id, State: $instance_state, Public IP: $public_ip"
 
 # Check S3 bucket exists and is private
 bucket_exists=false
@@ -165,16 +165,16 @@ aws s3api head-bucket --bucket $bucket_name 2>/dev/null && bucket_exists=true
 echo "Bucket exists: $bucket_exists"
 
 # Check bucket public access block
-read -r block_public_acls block_public_policy < <(aws s3api get-public-access-block \
+read -r block_public_acls block_public_policy <<< "$(aws s3api get-public-access-block \
   --bucket $bucket_name \
   --query "PublicAccessBlockConfiguration.[BlockPublicAcls,BlockPublicPolicy]" \
-  --output text 2>/dev/null) && echo "Block Public ACLs: $block_public_acls, Block Public Policy: $block_public_policy"
+  --output text 2>/dev/null)"&& echo "Block Public ACLs: $block_public_acls, Block Public Policy: $block_public_policy"
 
 # Check IAM role
-read -r iam_role_name iam_role_arn < <(aws iam get-role \
+read -r iam_role_name iam_role_arn <<< "$(aws iam get-role \
   --role-name $role_name \
   --query "Role.[RoleName,Arn]" \
-  --output text 2>/dev/null) && echo "IAM Role: $iam_role_name"
+  --output text 2>/dev/null)"&& echo "IAM Role: $iam_role_name"
 
 # Check role policy has correct permissions
 policy_doc=$(aws iam get-role-policy \
@@ -185,10 +185,10 @@ policy_doc=$(aws iam get-role-policy \
 echo "Policy document retrieved: $(echo $policy_doc | jq -r '.Statement[0].Action' 2>/dev/null)"
 
 # Check IAM instance profile association
-read -r profile_arn profile_state < <(aws ec2 describe-iam-instance-profile-associations \
+read -r profile_arn profile_state <<< "$(aws ec2 describe-iam-instance-profile-associations \
   --filters "Name=instance-id,Values=$instance_id" \
   --query "IamInstanceProfileAssociations[0].[IamInstanceProfile.Arn,State]" \
-  --output text 2>/dev/null) && echo "Instance Profile: $profile_arn, State: $profile_state"
+  --output text 2>/dev/null)"&& echo "Instance Profile: $profile_arn, State: $profile_state"
 
 # Validation checks
 ec2_exists=false

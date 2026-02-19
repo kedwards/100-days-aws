@@ -59,16 +59,16 @@ peer_conn_name=datacenter-vpc-peering
 private_vpc_name=datacenter-private-vpc
 
 
-read -r default_vpc_id < <(aws ec2 describe-vpcs \
+default_vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[?IsDefault].VpcId" \
   --output text) && echo "Default VPC ID: $default_vpc_id"
 
-read -r private_vpc_id < <(aws ec2 describe-vpcs \
+private_vpc_id=$(aws ec2 describe-vpcs \
   --filter "Name=tag:Name,Values=$private_vpc_name" \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "Private VPC ID: $private_vpc_id"
 
-read -r peering_conn_id < <(aws ec2 create-vpc-peering-connection \
+peering_conn_id=$(aws ec2 create-vpc-peering-connection \
   --vpc-id $default_vpc_id \
   --peer-vpc-id $private_vpc_id \
   --tag-specifications "ResourceType=vpc-peering-connection,Tags=[{Key=Name,Value=$peering_conn_name}]" \
@@ -77,12 +77,12 @@ read -r peering_conn_id < <(aws ec2 create-vpc-peering-connection \
 
 aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id $peering_conn_id
 
-read -r pub_route_table_id < <(aws ec2 describe-route-tables \
+pub_route_table_id=$(aws ec2 describe-route-tables \
   --filters Name=vpc-id,Values=$default_vpc_id \
   --query RouteTables[].RouteTableId \
   --output text) && echo "Public rtb_id: $pub_route_table_id"
 
-read -r priv_route_table_id < <(aws ec2 describe-route-tables \
+priv_route_table_id=$(aws ec2 describe-route-tables \
   --filters Name=vpc-id,Values=$private_vpc_id \
   --query RouteTables[].RouteTableId \
   --output text) && echo "Private rtb_id : $priv_route_table_id"
@@ -97,7 +97,7 @@ aws ec2 create-route \
   --destination-cidr-block 172.31.0.0/16 \
   --vpc-peering-connection-id $peering_conn_id
 
-read -r public_security_group_id < <(aws ec2 describe-instances --filters Name=tag:Name,Values=$public_ec2_name --query Reservations[0].Instances[0].SecurityGroups[].GroupId --output text) && echo "Public Security Group Id: $public_security_group_id"
+public_security_group_id=$(aws ec2 describe-instances --filters Name=tag:Name,Values=$public_ec2_name --query Reservations[0].Instances[0].SecurityGroups[].GroupId --output text) && echo "Public Security Group Id: $public_security_group_id"
 
 aws ec2 authorize-security-group-ingress \
   --group-id $public_security_group_id \
@@ -105,7 +105,7 @@ aws ec2 authorize-security-group-ingress \
   --port 22 \
   --cidr 0.0.0.0/0
 
-read -r private_security_group_id < <(aws ec2 describe-instances --filters Name=tag:Name,Values=$private_ec2_name --query Reservations[0].Instances[0].SecurityGroups[].GroupId --output text) && echo "Private Security Group Id: $private_security_group_id"
+private_security_group_id=$(aws ec2 describe-instances --filters Name=tag:Name,Values=$private_ec2_name --query Reservations[0].Instances[0].SecurityGroups[].GroupId --output text) && echo "Private Security Group Id: $private_security_group_id"
 
 aws ec2 authorize-security-group-ingress \
   --group-id $private_security_group_id \
@@ -113,11 +113,11 @@ aws ec2 authorize-security-group-ingress \
   --port -1 \
   --cidr 0.0.0.0/0
 
-read -r public_ip < <(aws ec2 describe-instances --filters Name=tag:Name,Values=$public_ec2_name --query Reservations[0].Instances[0].PublicIpAddress --output text) && echo "Public ip: $public_ip"
+public_ip=$(aws ec2 describe-instances --filters Name=tag:Name,Values=$public_ec2_name --query Reservations[0].Instances[0].PublicIpAddress --output text) && echo "Public ip: $public_ip"
 
 ssh -i ~/.ssh/id_rsa ec2-user@$public_ip
 
-read -r private_ip < <(aws ec2 describe-instances --filters Name=tag:Name,Values=$private_ec2_name --query Reservations[0].Instances[0].PrivateIpAddress --output text) && echo "Private ip: $private_ip"
+private_ip=$(aws ec2 describe-instances --filters Name=tag:Name,Values=$private_ec2_name --query Reservations[0].Instances[0].PrivateIpAddress --output text) && echo "Private ip: $private_ip"
 
 ```
 
@@ -141,61 +141,61 @@ peer_conn_name=datacenter-vpc-peering
 private_vpc_name=datacenter-private-vpc
 
 # Get VPC IDs
-read -r default_vpc_id < <(aws ec2 describe-vpcs \
+default_vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[?IsDefault].VpcId" \
   --output text) && echo "Default VPC ID: $default_vpc_id"
 
-read -r private_vpc_id < <(aws ec2 describe-vpcs \
+private_vpc_id=$(aws ec2 describe-vpcs \
   --filters "Name=tag:Name,Values=$private_vpc_name" \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "Private VPC ID: $private_vpc_id"
 
 # Get peering connection info
-read -r peering_id peering_status < <(aws ec2 describe-vpc-peering-connections \
+read -r peering_id peering_status <<< "$(aws ec2 describe-vpc-peering-connections \
   --filters "Name=tag:Name,Values=$peer_conn_name" \
   --query "VpcPeeringConnections[0].[VpcPeeringConnectionId,Status.Code]" \
-  --output text) && echo "Peering ID: $peering_id, Status: $peering_status"
+  --output text)" && echo "Peering ID: $peering_id, Status: $peering_status"
 
 # Get route tables and check for peering routes
-read -r pub_route_table_id < <(aws ec2 describe-route-tables \
+pub_route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$default_vpc_id" "Name=association.main,Values=true" \
   --query "RouteTables[0].RouteTableId" \
   --output text) && echo "Public route table: $pub_route_table_id"
 
-read -r priv_route_table_id < <(aws ec2 describe-route-tables \
+priv_route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$private_vpc_id" \
   --query "RouteTables[0].RouteTableId" \
   --output text) && echo "Private route table: $priv_route_table_id"
 
 # Check if peering routes exist
-read -r pub_peering_route < <(aws ec2 describe-route-tables \
+pub_peering_route=$(aws ec2 describe-route-tables \
   --route-table-ids "$pub_route_table_id" \
   --query "RouteTables[0].Routes[?VpcPeeringConnectionId=='$peering_id'].VpcPeeringConnectionId" \
   --output text) && echo "Public VPC peering route: $pub_peering_route"
 
-read -r priv_peering_route < <(aws ec2 describe-route-tables \
+priv_peering_route=$(aws ec2 describe-route-tables \
   --route-table-ids "$priv_route_table_id" \
   --query "RouteTables[0].Routes[?VpcPeeringConnectionId=='$peering_id'].VpcPeeringConnectionId" \
   --output text) && echo "Private VPC peering route: $priv_peering_route"
 
 # Get EC2 instance info
-read -r public_instance_id public_ip < <(aws ec2 describe-instances \
+read -r public_instance_id public_ip <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$public_ec2_name" "Name=instance-state-name,Values=running" \
   --query "Reservations[0].Instances[0].[InstanceId,PublicIpAddress]" \
-  --output text) && echo "Public EC2: $public_instance_id, IP: $public_ip"
+  --output text)" && echo "Public EC2: $public_instance_id, IP: $public_ip"
 
-read -r private_instance_id private_ip < <(aws ec2 describe-instances \
+read -r private_instance_id private_ip <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$private_ec2_name" "Name=instance-state-name,Values=running" \
   --query "Reservations[0].Instances[0].[InstanceId,PrivateIpAddress]" \
-  --output text) && echo "Private EC2: $private_instance_id, IP: $private_ip"
+  --output text)" && echo "Private EC2: $private_instance_id, IP: $private_ip"
 
 # Check private instance security group for ICMP rule
-read -r private_sg_id < <(aws ec2 describe-instances \
+private_sg_id=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$private_ec2_name" \
   --query "Reservations[0].Instances[0].SecurityGroups[0].GroupId" \
   --output text) && echo "Private SG ID: $private_sg_id"
 
-read -r icmp_rule < <(aws ec2 describe-security-group-rules \
+icmp_rule=$(aws ec2 describe-security-group-rules \
   --filters "Name=group-id,Values=$private_sg_id" \
   --query "SecurityGroupRules[?IsEgress==\`false\` && IpProtocol==\`icmp\`].SecurityGroupRuleId" \
   --output text) && echo "ICMP rule ID: $icmp_rule"

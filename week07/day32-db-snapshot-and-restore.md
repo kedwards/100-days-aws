@@ -62,22 +62,23 @@ aws rds describe-db-instances --db-instance-identifier $db_instance_restore_name
 ```
 
 ```bash
-db_instance_name=devops-rds
-db_snapshot_identifier=devops-snapshot
-db_instance_restore_name=devops-snapshot-restore
+prefix=datacenter
+db_instance_name=${prefix}-rds
+db_snapshot_identifier=${prefix}-rds-pre-snapshot
+db_instance_restore_name=${prefix}-snapshot-restore
 db_instance_size=db.t3.micro
 
 # Check snapshot
-read -r snapshot_id snapshot_status source_instance < <(aws rds describe-db-snapshots \
+read -r snapshot_id snapshot_status source_instance <<< "$(aws rds describe-db-snapshots \
   --db-snapshot-identifier $db_snapshot_identifier \
   --query "DBSnapshots[0].[DBSnapshotIdentifier,Status,DBInstanceIdentifier]" \
-  --output text 2>/dev/null) && echo "Snapshot: $snapshot_id, Status: $snapshot_status, Source: $source_instance"
+  --output text 2>/dev/null)"&& echo "Snapshot: $snapshot_id, Status: $snapshot_status, Source: $source_instance"
 
 # Check restored instance
-read -r restored_id restored_class restored_status < <(aws rds describe-db-instances \
+read -r restored_id restored_class restored_status <<< "$(aws rds describe-db-instances \
   --db-instance-identifier $db_instance_restore_name \
   --query "DBInstances[0].[DBInstanceIdentifier,DBInstanceClass,DBInstanceStatus]" \
-  --output text 2>/dev/null) && echo "Restored Instance: $restored_id, Class: $restored_class, Status: $restored_status"
+  --output text 2>/dev/null)"&& echo "Restored Instance: $restored_id, Class: $restored_class, Status: $restored_status"
 
 # Validation checks
 snapshot_exists=false

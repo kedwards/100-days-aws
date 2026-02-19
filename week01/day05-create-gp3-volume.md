@@ -41,7 +41,7 @@ aws ec2 describe-volumes --filters "Name=tag:Name,Values=$volume_name" \
 ```
 
 ```bash
-read -r id size type < <(aws ec2 describe-volumes --filters "Name=tag:Name,Values=$volume_name" --query "Volumes[0].[VolumeId,Size,VolumeType]" --output text) && echo "Volume ID: $id, Size: $size, Type: $type"
+read -r id size type <<< "$(aws ec2 describe-volumes --filters "Name=tag:Name,Values=$volume_name" --query "Volumes[0].[VolumeId,Size,VolumeType]" --output text)" && echo "Volume ID: $id, Size: $size, Type: $type"
 
 volume_exists=false
 size_valid=false

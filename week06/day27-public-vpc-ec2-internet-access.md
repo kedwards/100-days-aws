@@ -47,13 +47,13 @@ aws ec2 import-key-pair \
   --public-key-material fileb://~/.ssh/id_rsa.pub \
   --region "$region"
 
-read -r vpc_id < <(aws ec2 create-vpc \
+vpc_id=$(aws ec2 create-vpc \
   --cidr-block 10.0.0.0/16 \
   --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=$vpc_name}]" \
   --query "Vpc.VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
-read -r igw_id < <(aws ec2 create-internet-gateway \
+igw_id=$(aws ec2 create-internet-gateway \
   --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=my-igw}]" \
   --query "InternetGateway.InternetGatewayId" \
   --output text) && echo "Internet Gateway ID: $igw_id"
@@ -62,7 +62,7 @@ aws ec2 attach-internet-gateway \
   --vpc-id "$vpc_id" \
   --internet-gateway-id "$igw_id"
 
-read -r route_table_id < <(aws ec2 describe-route-tables \
+route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$vpc_id" \
   --query "RouteTables[0].RouteTableId" \
   --output text) && echo "Route Table ID: $route_table_id"
@@ -72,7 +72,7 @@ aws ec2 create-route \
   --destination-cidr-block '0.0.0.0/0' \
   --gateway-id $igw_id
 
-read -r subnet_id < <(aws ec2 create-subnet \
+subnet_id=$(aws ec2 create-subnet \
   --vpc-id $vpc_id \
   --cidr-block 10.0.0.0/24 \
   --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=$subnet_name}]" \
@@ -81,7 +81,7 @@ read -r subnet_id < <(aws ec2 create-subnet \
 
 aws ec2 modify-subnet-attribute --subnet-id $subnet_id --map-public-ip-on-launch
 
-read -r security_group_id < <(aws ec2 create-security-group \
+security_group_id=$(aws ec2 create-security-group \
   --group-name MySecurityGroup \
   --description "My security group" \
   --vpc-id $vpc_id \
@@ -94,7 +94,7 @@ aws ec2 authorize-security-group-ingress \
   --port 22 \
   --cidr 0.0.0.0/0
 
-read -r image_id < <(aws ec2 describe-images \
+image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
   --filters 'Name=name,Values=al2023-ami-2023.*-x86_64' \
@@ -122,12 +122,12 @@ aws ec2 run-instances \
 instance_name=datacenter-pub-ec2
 instance_sg=default
 
-read -r instance_id instance_key instance_sg instance_state public_ip < <(aws ec2 describe-instances \
+read -r instance_id instance_key instance_sg instance_state public_ip <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,KeyName,SecurityGroups[0].GroupId,State.Name,PublicIpAddress]" \
-  --output text) && echo "Instance ID: $instance_id, Key: $instance_key, SG: $instance_sg, State: $instance_state, IP: $public_ip"
+  --output text)" && echo "Instance ID: $instance_id, Key: $instance_key, SG: $instance_sg, State: $instance_state, IP: $public_ip"
 
-read -r ssh_rule < <(aws ec2 describe-security-group-rules \
+ssh_rule=$(aws ec2 describe-security-group-rules \
   --filters "Name=group-id,Values=$instance_sg" \
   --query "SecurityGroupRules[?IsEgress==\`false\` && IpProtocol==\`tcp\` && FromPort==\`22\` && ToPort==\`22\`].SecurityGroupRuleId" \
   --output text) && echo "SSH rule ID: $ssh_rule"

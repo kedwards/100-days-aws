@@ -26,7 +26,7 @@ instance_type=t2.nano
 instance_name=datacenter-ec2
 instance_state=running
 
-read -r instance_id < <(aws ec2 describe-instances \
+instance_id=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=datacenter-ec2" \
   --query "Reservations[].Instances[].InstanceId" --output text) && echo "Instance ID: $instance_id"
 
@@ -54,10 +54,10 @@ aws ec2 describe-instances \
 ```
 
 ```bash
-read -r id type state < <(aws ec2 describe-instances \
+read -r id type state <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,InstanceType,State.Name]" \
-  --output text) && echo "Instance ID: $id, Type: $type, State: $state"
+  --output text)" && echo "Instance ID: $id, Type: $type, State: $state"
 
 instance_exists=false
 type_valid=false

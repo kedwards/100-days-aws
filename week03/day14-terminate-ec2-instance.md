@@ -20,12 +20,12 @@ aws ec2 terminate-instances help
 ```bash
 instance_name=xfusion-ec2
 
-read -r instance_id < <(aws ec2 describe-instances \
+instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
 
-read -r termination_protection < <(aws ec2 describe-instance-attribute \
+termination_protection=$(aws ec2 describe-instance-attribute \
   --instance-id "$instance_id" \
   --attribute disableApiTermination \
   --query "DisableApiTermination.Value" \
@@ -53,7 +53,7 @@ aws ec2 describe-instances --instance-ids "$instance_id" \
 ```
 
 ```bash
-read -r state < <(aws ec2 describe-instances --instance-ids "$instance_id" \
+state=$(aws ec2 describe-instances --instance-ids "$instance_id" \
   --query "Reservations[0].Instances[0].State.Name" \
   --output text) && echo "Instance state: $state"
 

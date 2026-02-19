@@ -27,7 +27,7 @@ volume_name=xfusion-vol
 snapshot_name=devops-vol-ss
 snapshot_description="devops Snapshot"
 
-read -r volume_id < <(aws ec2 describe-volumes \
+volume_id=$(aws ec2 describe-volumes \
   --filters "Name=tag:Name,Values=$volume_name" \
   --query "Volumes[].VolumeId" \
   --output text) && echo "Volume ID: $volume_id"
@@ -55,10 +55,10 @@ aws ec2 describe-snapshots --owner-ids self \
 ```
 
 ```bash
-read -r snapshot_id snap_volume_id snap_description state < <(aws ec2 describe-snapshots --owner-ids self \
+read -r snapshot_id snap_volume_id snap_description state <<< "$(aws ec2 describe-snapshots --owner-ids self \
   --filters "Name=tag:Name,Values=$snapshot_name" \
   --query "Snapshots[0].[SnapshotId,VolumeId,Description,State]" \
-  --output text) && echo "Snapshot ID: $snapshot_id, Volume: $snap_volume_id, Description: $snap_description, State: $state"
+  --output text)" && echo "Snapshot ID: $snapshot_id, Volume: $snap_volume_id, Description: $snap_description, State: $state"
 
 snapshot_exists=false
 description_valid=false

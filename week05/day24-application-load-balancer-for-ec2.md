@@ -39,23 +39,23 @@ alb_name=datacenter-alb
 tg_name=datacenter-tg
 sg_name=datacenter-sg
 
-read -r vpc_id < <(aws ec2 describe-vpcs \
+vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[?IsDefault].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
 # Get instance ID
-read -r instance_id < <(aws ec2 describe-instances \
+instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[*].Instances[*].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
 
 # Get default security group
-read -r default_sg < <(aws ec2 describe-security-groups \
+default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default SG: $default_sg"
 
 # Create security group for ALB
-read -r alb_sg < <(aws ec2 create-security-group \
+alb_sg=$(aws ec2 create-security-group \
   --group-name "$sg_name" \
   --description "Security group for $alb_name" \
   --vpc-id "$vpc_id" \
@@ -77,7 +77,7 @@ aws ec2 authorize-security-group-ingress \
   --source-group "$alb_sg"
 
 # Create target group
-read -r tg_arn < <(aws elbv2 create-target-group \
+tg_arn=$(aws elbv2 create-target-group \
   --name "$tg_name" \
   --protocol HTTP \
   --port 80 \
@@ -92,13 +92,13 @@ aws elbv2 register-targets \
   --targets "Id=$instance_id,Port=80"
 
 # Get subnets for ALB (need at least 2 in different AZs)
-read -r subnet1 subnet2 < <(aws ec2 describe-subnets \
+read -r subnet1 subnet2 <<< "$(aws ec2 describe-subnets \
   --filters "Name=vpc-id,Values=$vpc_id" \
   --query "Subnets[0:2].SubnetId" \
-  --output text) && echo "Subnets: $subnet1, $subnet2"
+  --output text)" && echo "Subnets: $subnet1, $subnet2"
 
 # Create Application Load Balancer
-read -r alb_arn < <(aws elbv2 create-load-balancer \
+alb_arn=$(aws elbv2 create-load-balancer \
   --name "$alb_name" \
   --security-groups "$alb_sg" \
   --subnets "$subnet1" "$subnet2" \
@@ -138,15 +138,15 @@ alb_name=datacenter-alb
 tg_name=datacenter-tg
 sg_name=datacenter-sg
 
-read -r alb_state alb_dns < <(aws elbv2 describe-load-balancers --names "$alb_name" \
+read -r alb_state alb_dns <<< "$(aws elbv2 describe-load-balancers --names "$alb_name" \
   --query "LoadBalancers[0].[State.Code,DNSName]" \
-  --output text) && echo "ALB state: $alb_state, DNS: $alb_dns"
+  --output text)" && echo "ALB state: $alb_state, DNS: $alb_dns"
 
-read -r target_health < <(aws elbv2 describe-target-health --target-group-arn "$tg_arn" \
+target_health=$(aws elbv2 describe-target-health --target-group-arn "$tg_arn" \
   --query "TargetHealthDescriptions[?Target.Id=='$instance_id'].TargetHealth.State" \
   --output text) && echo "Target health: $target_health"
 
-read -r listener_count < <(aws elbv2 describe-listeners --load-balancer-arn "$alb_arn" \
+listener_count=$(aws elbv2 describe-listeners --load-balancer-arn "$alb_arn" \
   --query "length(Listeners)" \
   --output text) && echo "Listeners: $listener_count"
 

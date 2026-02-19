@@ -37,9 +37,9 @@ aws iam get-user --user-name "$user_name" \
 ```
 
 ```bash
-read -r retrieved_username user_id < <(aws iam get-user --user-name "$user_name" \
+read -r retrieved_username user_id <<< "$(aws iam get-user --user-name "$user_name" \
   --query "User.[UserName,UserId]" \
-  --output text) && echo "Username: $retrieved_username, User ID: $user_id"
+  --output text)" && echo "Username: $retrieved_username, User ID: $user_id"
 
 # Check validation
 user_exists=false
