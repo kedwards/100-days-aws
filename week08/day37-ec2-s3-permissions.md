@@ -102,6 +102,43 @@ policy_arn=$(aws iam create-policy \
   --query 'Policy.Arn' \
   --output text) && echo "Policy ARN: $policy_arn"
 
+# cat <<EOF > trust.json
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [{
+#     "Effect": "Allow",
+#     "Principal": {"Service": "ec2.amazonaws.com"},
+#     "Action": "sts:AssumeRole"
+#   }]
+# }
+# EOF
+#
+# role_arn=$(aws iam create-role \
+#   --role-name $role_name \
+#   --assume-role-policy-document file://trust.json \
+#   --query 'Role.Arn' \
+#   --output text) && echo "Role ARN: $role_arn"
+#
+# cat <<EOF > policy.json
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [{
+#     "Effect": "Allow",
+#     "Action": ["s3:PutObject", "s3:GetObject", "s3:ListBucket"],
+#     "Resource": [
+#       "arn:aws:s3:::'"$bucket_name"'",
+#       "arn:aws:s3:::'"$bucket_name"'/*"
+#     ]
+#   }]
+# }
+# EOF
+#
+# policy_arn=$(aws iam create-policy \
+#   --policy-name $role_name-s3-policy \
+#   --policy-document file://policy.json \
+#   --query 'Policy.Arn' \
+#   --output text) && echo "Policy ARN: $policy_arn"
+#
 aws iam attach-role-policy \
   --role-name $role_name \
   --policy-arn $policy_arn

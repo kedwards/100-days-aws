@@ -10,8 +10,10 @@ Create an EC2 instance: Create an EC2 instance named xfusion-ec2. Use any availa
 
 This script should:
 
-    Install the Nginx package.
-    Start the Nginx service.
+    Install and configure a web application (nginx, PHP, Python, Node.js, or Golang).
+    Start the web server service.
+
+**Note:** The solution below uses modular userdata scripts from `userdata-scripts/` directory, supporting multiple languages (python, golang, node, php).
 
 Set up an Application Load Balancer: Set up an Application Load Balancer named xfusion-alb. Attach default security group to the same.
 
@@ -43,6 +45,10 @@ aws elbv2 describe-target-health help
 <summary><h2>Solution</h2></summary>
 
 ```bash
+# Configuration - Choose your application type
+# Available options: python, golang, node, php
+# This solution uses userdata scripts from userdata-scripts/ directory
+
 prefix=devops
 security_group_name="$prefix-sg"
 instance_name="$prefix-ec2"
@@ -91,17 +97,41 @@ ubuntu_image=resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/curre
 # Amazon Linux 2023 - resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 
 amazon_image=resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
 
+# Choose application type: python, golang, node, or php
+app_type=php
+
+# For PHP, choose web server: nginx or httpd
+web_server=nginx
+
+# Get the project root directory (assumes script is run from project root)
+project_root="$(pwd)"
+userdata_script_path="$project_root/userdata-scripts/userdata-$app_type.sh"
+
+if [ ! -f "$userdata_script_path" ]; then
+  echo "Error: Userdata script not found: $userdata_script_path"
+  echo "Available options: python, golang, node, php"
+  exit 1
+fi
+
+# Load userdata script
+if [ "$app_type" = "php" ]; then
+  # For PHP, inject WEB_SERVER variable
+  userdata_script="#!/bin/bash
+export WEB_SERVER=$web_server
+$(tail -n +2 "$userdata_script_path")"
+else
+  userdata_script=$(cat "$userdata_script_path")
+fi
+
+echo "Using $app_type application with $([ "$app_type" = "php" ] && echo "$web_server" || echo "nginx")"
+
 instance_id=$(aws ec2 run-instances \
   --image-id $ubuntu_image \
   --instance-type "$instance_type" \
   --region "$region" \
   --security-group-ids "$ec2_security_group_id" \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]" \
-  --user-data '#!/bin/bash
-    apt-get update
-    apt-get install -y nginx
-    systemctl start nginx
-    systemctl enable nginx' \
+  --user-data "$userdata_script" \
   --query "Instances[0].InstanceId" \
   --output text) && echo "Instance Id: $instance_id"
 
@@ -164,7 +194,7 @@ aws elbv2 describe-target-health --target-group-arn $target_group_arn \
 ```
 
 ```bash
-prefix=xfusion
+prefix=datacenter
 security_group_name="$prefix-sg"
 instance_name="$prefix-ec2"
 load_balancer_name="$prefix-alb"
@@ -208,10 +238,10 @@ web_response=""
 if [[ -n "$alb_dns" && "$alb_dns" != "None" ]]; then
   echo "Testing ALB endpoint: http://$alb_dns"
   web_response=$(curl -s --connect-timeout 10 "http://$alb_dns" 2>/dev/null)
-  if [[ "$web_response" == *"nginx"* || "$web_response" == *"Welcome"* ]]; then
-    echo "Web response: Nginx is responding"
+  if [[ "$web_response" == *"phpinfo()"* || "$web_response" == *"PHP Version"* ]]; then
+    echo "Web response: PHP is responding"
   else
-    echo "Web response: $web_response"
+    echo "Web response: $(echo "$web_response" | head -c 100)..."
   fi
 fi
 
@@ -224,7 +254,7 @@ alb_exists=false
 alb_active=false
 tg_exists=false
 target_registered=false
-nginx_accessible=false
+php_accessible=false
 
 [[ -n "$ec2_id" && "$ec2_id" != "None" ]] && ec2_exists=true
 [[ "$ec2_state" == "running" ]] && ec2_running=true
@@ -234,9 +264,9 @@ nginx_accessible=false
 [[ "$alb_state" == "active" ]] && alb_active=true
 [[ -n "$tg_arn" && "$tg_arn" != "None" ]] && tg_exists=true
 [[ "$target_health" == "healthy" || "$target_health" == "initial" ]] && target_registered=true
-[[ "$web_response" == *"nginx"* || "$web_response" == *"Welcome"* ]] && nginx_accessible=true
+[[ "$web_response" == *"phpinfo()"* || "$web_response" == *"PHP Version"* ]] && php_accessible=true
 
-if [[ "$ec2_exists" == true ]] && [[ "$ec2_running" == true ]] && [[ "$ec2_sg_valid" == true ]] && [[ "$sg_exists" == true ]] && [[ "$alb_exists" == true ]] && [[ "$alb_active" == true ]] && [[ "$tg_exists" == true ]] && [[ "$target_registered" == true ]] && [[ "$nginx_accessible" == true ]]; then
+if [[ "$ec2_exists" == true ]] && [[ "$ec2_running" == true ]] && [[ "$ec2_sg_valid" == true ]] && [[ "$sg_exists" == true ]] && [[ "$alb_exists" == true ]] && [[ "$alb_active" == true ]] && [[ "$tg_exists" == true ]] && [[ "$target_registered" == true ]] && [[ "$php_accessible" == true ]]; then
   echo "✓ Success"
   echo "  EC2 Instance: $ec2_id ($ec2_state)"
   echo "  Security Group: $security_group_name"
@@ -244,7 +274,7 @@ if [[ "$ec2_exists" == true ]] && [[ "$ec2_running" == true ]] && [[ "$ec2_sg_va
   echo "  ALB DNS: $alb_dns"
   echo "  Target Group: $tg_name"
   echo "  Target Health: $target_health"
-  echo "  Nginx accessible via ALB: Yes"
+  echo "  PHP accessible via ALB: Yes"
 else
   echo "✗ Fail"
   
@@ -301,12 +331,12 @@ else
   else
     echo "  ✓ Target is registered and healthy"
   fi
-  
-  if [[ "$nginx_accessible" == false ]]; then
-    echo "  ✗ Nginx not accessible via ALB"
+
+  if [[ "$php_accessible" == false ]]; then
+    echo "  ✗ PHP not accessible via ALB"
     echo "    ALB DNS: $alb_dns"
   else
-    echo "  ✓ Nginx accessible via ALB"
+    echo "  ✓ PHP accessible via ALB"
   fi
 fi
 ```
