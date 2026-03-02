@@ -27,17 +27,23 @@ instance_name=datacenter-ec2
 instance_state=running
 
 instance_id=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=datacenter-ec2" \
+  --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].InstanceId" --output text) && echo "Instance ID: $instance_id"
 
-aws ec2 wait stop-instances --instance-id "$instance_id" \
-  && aws ec2 wait instance-stopped --instance-ids "$instance_id"
+aws ec2 stop-instances --instance-ids "$instance_id" && echo "Stopping instance..."
+aws ec2 wait instance-stopped --instance-ids "$instance_id" && echo "Instance stopped"
 
 aws ec2 modify-instance-attribute \
   --instance-id "$instance_id" \
   --attribute instanceType \
-  --value "$instance_type" \
-  && aws ec2 wait instance-running --instance-ids "$instance_id"
+  --value "$instance_type" && echo "Changed instance type to $instance_type"
+
+aws ec2 start-instances --instance-ids "$instance_id" && echo "Starting instance..."
+aws ec2 wait instance-running --instance-ids "$instance_id" && echo "Instance running"
+
+aws ec2 describe-instances --instance-ids "$instance_id" \
+  --query "Reservations[0].Instances[0].{InstanceId:InstanceId,Type:InstanceType,State:State.Name}" \
+  --output table
 ```
 
 </details>

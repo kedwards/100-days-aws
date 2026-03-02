@@ -45,103 +45,132 @@ aws s3 ls help
 <summary><h2>Solution</h2></summary>
 
 ```bash
-vpc_name=reach-devops-priv-vpc
-priv_subnet_name=reach-devops-priv-subnet
-private_instance_name=reach-devops-priv-ec2
-s3_bucket_name=reach-devops-nat-15195
+vpc_name=xfusion-priv-vpc
+private_subnet_name=xfusion-priv-subnet
+private_instance_name=xfusion-priv-ec2
+s3_bucket_name=xfusion-nat-30282
 instance_type=t2.micro
-public_subnet_name=reach-devops-pub-subnet
-nat_instance_name=reach-devops-nat-instance
+public_subnet_name=xfusion-pub-subnet
+nat_instance_name=xfusion-nat-instance
+nat_sg_name=xfusion-nat-sg
+igw_name=xfusion-igw
+public_rt_name=xfusion-pub-rt
+key_name=xfusion-nat-key
 
+# Get existing VPC ID
 vpc_id=$(aws ec2 describe-vpcs \
-  --filter "Name=tag:Name,Values=$vpc_name" \
+  --filters "Name=tag:Name,Values=$vpc_name" \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
+aws ec2 describe-vpcs --vpc-ids "$vpc_id" --output table
+
+# Get existing private subnet
 private_subnet_id=$(aws ec2 describe-subnets \
-  --filters "Name=tag:Name,Values=reach-devops-priv-subnet" \
-  --query 'Subnets[0].SubnetId' \
-  --output text) && echo "priv_subnet_id: $private_subnet_id"
+  --filters "Name=tag:Name,Values=$private_subnet_name" "Name=vpc-id,Values=$vpc_id" \
+  --query "Subnets[0].SubnetId" \
+  --output text) && echo "Private Subnet ID: $private_subnet_id"
 
-private_route_table_id=$(aws ec2 describe-route-tables \
-  --filters Name=vpc-id,Values=$vpc_id \
-  --query "RouteTables[?\!Routes[?starts_with(GatewayId, 'igw-')]].RouteTableId" \
-  --output text \
-  --query "RouteTables[?Associations[0].Main].RouteTableId") && echo "Private rtb_id: $private_route_table_id"
-
+# Get private route table (main route table for the VPC)
 private_route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$vpc_id" "Name=association.main,Values=true" \
-  --query 'RouteTables[0].RouteTableId' --output text) && echo "priv_rtb_id: $private_route_table_id"
+  --query "RouteTables[0].RouteTableId" \
+  --output text) && echo "Private Route Table ID: $private_route_table_id"
 
-# find a cidrblock that is not taken
-aws ec2 describe-subnets --filters Name=vpc-id,Values=$vpc_id --query Subnets[*].CidrBlock
+# Find available CIDR block for public subnet
+aws ec2 describe-subnets \
+  --filters "Name=vpc-id,Values=$vpc_id" \
+  --query "Subnets[*].CidrBlock" \
+  --output text && echo "(existing CIDR blocks)"
 
-cidr_block=10.0.2.0/24
+cidr_block=********/24
 
+# Create public subnet
 public_subnet_id=$(aws ec2 create-subnet \
-  --vpc-id $vpc_id \
-  --cidr-block $cidr_block \
+  --vpc-id "$vpc_id" \
+  --cidr-block "$cidr_block" \
   --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=$public_subnet_name}]" \
-  --query "Subnet.SubnetId" --output text) && echo "Public Subnet ID: $public_subnet_id"
+  --query "Subnet.SubnetId" \
+  --output text) && echo "Public Subnet ID: $public_subnet_id"
+
+aws ec2 describe-subnets --subnet-ids "$public_subnet_id" --output table
 
 # Enable auto-assign public IP for instances launched in this subnet
 aws ec2 modify-subnet-attribute \
   --subnet-id "$public_subnet_id" \
   --map-public-ip-on-launch
 
+# Create and attach Internet Gateway
 igw_id=$(aws ec2 create-internet-gateway \
-  --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=reach-devops-igw}]" \
+  --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=$igw_name}]" \
   --query "InternetGateway.InternetGatewayId" \
   --output text) && echo "Internet Gateway ID: $igw_id"
 
 aws ec2 attach-internet-gateway \
-  --vpc-id $vpc_id \
-  --internet-gateway-id $igw_id
+  --vpc-id "$vpc_id" \
+  --internet-gateway-id "$igw_id"
 
+aws ec2 describe-internet-gateways --internet-gateway-ids "$igw_id" --output table
+
+# Create public route table
 public_route_table_id=$(aws ec2 create-route-table \
-  --vpc-id $vpc_id \
-  --query 'RouteTable.RouteTableId' --output text) && echo "pub_rtb_id: $public_route_table_id" \
-  --tag-specifications "ResourceType=route,Tags=[{Key=Name,Value=reach-devops-pub-route}]"
+  --vpc-id "$vpc_id" \
+  --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=$public_rt_name}]" \
+  --query "RouteTable.RouteTableId" \
+  --output text) && echo "Public Route Table ID: $public_route_table_id"
 
-aws ec2 create-route --route-table-id $public_route_table_id \
-  --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id $igw_idor \
-
+# Add route to Internet Gateway
 aws ec2 create-route \
-  --route-table-id $public_route_table_id \
-  --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id $igw_id
+  --route-table-id "$public_route_table_id" \
+  --destination-cidr-block *******/0 \
+  --gateway-id "$igw_id"
 
+# Associate public route table with public subnet
+aws ec2 associate-route-table \
+  --route-table-id "$public_route_table_id" \
+  --subnet-id "$public_subnet_id"
+
+aws ec2 describe-route-tables --route-table-ids "$public_route_table_id" --output table
+
+# Create security group for NAT instance
 nat_sg_id=$(aws ec2 create-security-group \
-  --vpc-id $vpc_id \
-  --group-name reach-nat-security-group \
-  --description "My nat security group" \
+  --vpc-id "$vpc_id" \
+  --group-name "$nat_sg_name" \
+  --description "Security group for NAT instance" \
   --query "GroupId" \
   --output text) && echo "NAT Security Group ID: $nat_sg_id"
 
+# Allow all traffic from VPC CIDR (for NAT forwarding)
+vpc_cidr=$(aws ec2 describe-vpcs \
+  --vpc-ids "$vpc_id" \
+  --query "Vpcs[0].CidrBlock" \
+  --output text)
+
 aws ec2 authorize-security-group-ingress \
-  --group-id $nat_sg_id \
-  --ip-permissions '{"IpProtocol":"-1","IpRanges":[{"CidrIp":"0.0.0.0/0"}]}'
+  --group-id "$nat_sg_id" \
+  --protocol -1 \
+  --cidr "$vpc_cidr"
 
 # Allow SSH from anywhere (optional, for troubleshooting)
 aws ec2 authorize-security-group-ingress \
-  --group-id $nat_sg_id \
+  --group-id "$nat_sg_id" \
   --protocol tcp \
   --port 22 \
-  --cidr 0.0.0.0/0
+  --cidr *******/0
 
+aws ec2 describe-security-groups --group-ids "$nat_sg_id" --output table
+
+# Import SSH key pair
 if [[ ! -f ~/.ssh/id_rsa.pub ]]; then
   ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
 fi
 
-PUBKEY="$(cat ~/.ssh/id_rsa.pub)"
-
-key_name=devops-test
 aws ec2 import-key-pair \
   --key-name "$key_name" \
   --public-key-material fileb://~/.ssh/id_rsa.pub
 
-cat > user-data.sh <<EOF
+# Create NAT instance user data script
+cat > user-data.sh <<'USERDATA'
 #!/bin/bash
 set -eux
 
@@ -149,111 +178,67 @@ yum install iptables-services -y
 systemctl enable iptables
 systemctl start iptables
 
-echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/custom-ip-forwarding.conf
+echo "net.ipv4.ip_forward=1" | tee /etc/sysctl.d/custom-ip-forwarding.conf
 sysctl -p /etc/sysctl.d/custom-ip-forwarding.conf
 
-primary_interface=\$(ip route show default | awk '{print \$5}')
+primary_interface=$(ip route show default | awk '{print $5}')
 
-/sbin/iptables -t nat -A POSTROUTING -o \$primary_interface -j MASQUERADE
+/sbin/iptables -t nat -A POSTROUTING -o "$primary_interface" -j MASQUERADE
 /sbin/iptables -F FORWARD
 service iptables save
-EOF
+USERDATA
 
+# Launch NAT instance
 nat_instance_id=$(aws ec2 run-instances \
-  --image-id \
-    resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
-    --instance-type $instance_type \
-    --subnet-id $public_subnet_id \
-    --security-group-ids $nat_sg_id \
-    --associate-public-ip-address \
-    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$nat_instance_name}]" \
-    --user-data file://user-data.sh \
-    --query "Instances[0].InstanceId" \
-    --output text) && echo "Public Instance ID: $nat_instance_id"
+  --image-id resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
+  --instance-type "$instance_type" \
+  --subnet-id "$public_subnet_id" \
+  --security-group-ids "$nat_sg_id" \
+  --key-name "$key_name" \
+  --associate-public-ip-address \
+  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$nat_instance_name}]" \
+  --user-data file://user-data.sh \
+  --query "Instances[0].InstanceId" \
+  --output text) && echo "NAT Instance ID: $nat_instance_id"
 
-aws ec2 wait instance-running --instance-ids $nat_instance_id && echo "NAT instance is running"
+aws ec2 wait instance-running --instance-ids "$nat_instance_id" && echo "NAT instance is running"
 
-aws ec2 modify-instance-attribute \
-  --instance-id $nat_instance_id \
-  --source-dest-check "{\"Value\" : false}"
+aws ec2 describe-instances --instance-ids "$nat_instance_id" \
+  --query "Reservations[].Instances[].{Name:Tags[?Key=='Name']|[0].Value,State:State.Name,InstanceId:InstanceId,PublicIp:PublicIpAddress}" \
+  --output table
 
-or
-
+# Disable source/destination check for NAT
 aws ec2 modify-instance-attribute \
   --instance-id "$nat_instance_id" \
   --no-source-dest-check
 
+# Add route in private route table to NAT instance
 aws ec2 create-route \
-  --route-table-id $private_route_table_id \
-  --destination-cidr-block 0.0.0.0/0 \
-  --instance-id $nat_instance_id
+  --route-table-id "$private_route_table_id" \
+  --destination-cidr-block *******/0 \
+  --instance-id "$nat_instance_id"
 
+aws ec2 describe-route-tables --route-table-ids "$private_route_table_id" --output table
 
+# Allow outbound traffic on default security group
 default_security_group_id=$(aws ec2 describe-security-groups \
-  --filters Name=group-name,Values=default Name=vpc-id,Values=$vpc_id \
-  --query 'SecurityGroups[].GroupId' \
-  --output text) && echo "Default Security Group ID: $default_security_group_id"i
-
-
-
-
-
+  --filters "Name=group-name,Values=default" "Name=vpc-id,Values=$vpc_id" \
+  --query "SecurityGroups[0].GroupId" \
+  --output text) && echo "Default Security Group ID: $default_security_group_id"
 
 aws ec2 authorize-security-group-egress \
   --group-id "$default_security_group_id" \
-  --protocol tcp \
-  --port 0-65535 \
-  --cidr 0.0.0.0/0
+  --protocol -1 \
+  --cidr *******/0 2>/dev/null || echo "Egress rule already exists"
 
-aws ec2 create-route \
-  --route-table-id $private_route_table_id \
-  --destination-cidr-block 0.0.0.0/0 \
-  --instance-id $nat_instance_id
+# Wait for cron job to upload test file to S3
+echo "Waiting for cron job to upload test file to S3..."
+sleep 120
 
+aws s3 ls "s3://${s3_bucket_name}/" && echo "✓ Test file found in S3 bucket"
 
-
-# check attachment
-if [[ $(aws ec2 describe-internet-gateways --internet-gateway-ids $igw_id --query InternetGateways[0].Attachments[0].VpcId --output text) == $vpc_id ]]; then echo OK; else echo BAD; fi 
-
-PUB_RTB_ID=$(aws ec2 create-route-table \
-  --vpc-id "$VPC_ID" \
-  --query 'RouteTable.RouteTableId' --output text) && echo "pub_rtb_id: $PUB_RTB_ID"
-
-aws ec2 create-tags --resources "$PUB_RTB_ID" \
-  --tags Key=Name,Value=reach-devops-pub-rtb
-
-# Add route to Internet Gateway
-aws ec2 create-route \
-  --route-table-id "$PUB_RTB_ID" \
-  --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id "$IGW_ID"
-
-# Associate with public subnet
-aws ec2 associate-route-table \
-  --route-table-id "$PUB_RTB_ID" \
-  --subnet-id "$PUB_SUBNET_ID"
-
-public_route_table_id=$(aws ec2 create-route-table \
-  --vpc-id $vpc_id \
-  --query 'RouteTable.RouteTableId' --output text) && echo "pub_rtb_id: $public_route_table_id"
-
-aws ec2 create-route --route-table-id $public_route_table_id \
-  --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id $igw_id
-
-aws ec2 create-route \
-  --route-table-id $public_route_table_id \
-  --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id $igw_id
-
-private_route_table_id=$(aws ec2 describe-route-tables \
-  --filters Name=vpc-id,Values=$vpc_id \
-  --query "RouteTables[?\!Routes[?starts_with(GatewayId, 'igw-')]].RouteTableId" \
-  --output text \
-  --query "RouteTables[?Associations[0].Main].RouteTableId") && echo "Private rtb_id: $private_route_table_id"
-
-
-
+# Cleanup
+rm -f user-data.sh
 ```
 
 </details>

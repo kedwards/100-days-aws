@@ -1,4 +1,4 @@
-# Day 15 - Create Volume Snapshot
+# Day 15: Create Volume Snapshot
 
 ## Task
 

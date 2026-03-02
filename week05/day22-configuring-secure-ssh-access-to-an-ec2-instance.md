@@ -1,4 +1,4 @@
-# Day 22 - Create EC2 with SSH Access
+# Day 22: Configuring Secure SSH Access to an EC2 Instance
 
 ## Task
 

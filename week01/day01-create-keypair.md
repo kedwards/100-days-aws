@@ -23,6 +23,10 @@ key_name="xfusion-kp"
 key_type="rsa"
 
 aws ec2 create-key-pair --key-name "$key_name" --key-type "$key_type"
+
+aws ec2 describe-key-pairs --key-names "$key_name" \
+  --query "KeyPairs[0].{KeyName:KeyName,KeyType:KeyType}" \
+  --output table
 ```
 
 </details>

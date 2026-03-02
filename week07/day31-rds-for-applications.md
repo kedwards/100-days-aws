@@ -1,4 +1,4 @@
-# Day 31: Provision Private RDS Instance for Application Development
+# Day 31: Configuring a Private RDS Instance for Application Development
 
 ## Task
 

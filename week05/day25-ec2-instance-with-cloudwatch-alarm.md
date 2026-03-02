@@ -1,4 +1,4 @@
-# Day 25 - EC2 Instance with CloudWatch Alarm
+# Day 25: Setting Up an EC2 Instance and CloudWatch Alarm
 
 ## Task
 

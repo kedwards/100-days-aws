@@ -1,4 +1,4 @@
-# Day 23 - Sync S3 Buckets
+# Day 23: Data Migration Between S3 Buckets Using AWS CLI
 
 ## Task
 
@@ -40,6 +40,12 @@ aws s3api create-bucket \
 
 # Sync buckets
 aws s3 sync s3://"$source_bucket"/ s3://"$destination_bucket"/
+
+# Verify bucket contents match
+echo "Source:"
+aws s3 ls s3://"$source_bucket"/ --recursive
+echo "Destination:"
+aws s3 ls s3://"$destination_bucket"/ --recursive
 ```
 
 </details>

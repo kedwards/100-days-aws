@@ -1,4 +1,4 @@
-# Day 03: Create Subnet
+# Day 3: Create Subnet
 
 ## Task
 
@@ -29,8 +29,12 @@ aws ec2 describe-subnets \
 
 aws ec2 create-subnet \
   --vpc-id "$vpc_id" \
-  --cidr-block 172.31.96.0/20 \
+  --cidr-block ***********/20 \
   --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=$subnet_name}]"
+
+aws ec2 describe-subnets --filters "Name=tag:Name,Values=$subnet_name" \
+  --query "Subnets[0].{SubnetId:SubnetId,CidrBlock:CidrBlock,VpcId:VpcId}" \
+  --output table
 ```
 
 </details>

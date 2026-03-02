@@ -1,4 +1,4 @@
-# Day 17 - Create IAM Group
+# Day 17: Create IAM Group
 
 ## Task
 
@@ -22,6 +22,10 @@ aws iam get-group help
 group_name=iamgroup_siva
 
 aws iam create-group --group-name "$group_name"
+
+aws iam get-group --group-name "$group_name" \
+  --query "Group.{GroupName:GroupName,GroupId:GroupId}" \
+  --output table
 ```
 
 </details>

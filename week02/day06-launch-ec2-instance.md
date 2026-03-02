@@ -46,13 +46,19 @@ default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default security group: $default_sg"
 
-aws ec2 run-instances \
+instance_id=$(aws ec2 run-instances \
   --image-id "$image_id" \
   --instance-type "$instance_type" \
   --region "$region" \
   --security-group-ids "$default_sg" \
   --key-name "$key_name" \
-  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]"
+  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]" \
+  --query "Instances[0].InstanceId" \
+  --output text) && echo "Instance ID: $instance_id"
+
+aws ec2 describe-instances --instance-ids "$instance_id" \
+  --query "Reservations[0].Instances[0].{InstanceId:InstanceId,State:State.Name,Type:InstanceType}" \
+  --output table
 ```
 
 </details>

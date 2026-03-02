@@ -42,6 +42,10 @@ POLICY
 aws iam create-policy \
   --policy-name "$policy_name" \
   --policy-document file:///tmp/policy.json
+
+aws iam list-policies --scope Local \
+  --query "Policies[?PolicyName=='$policy_name'].{PolicyName:PolicyName,Arn:Arn}" \
+  --output table
 ```
 
 </details>

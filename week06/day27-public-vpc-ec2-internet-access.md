@@ -1,4 +1,4 @@
-# Day 27 - Configuring a Public VPC and EC2 Instance with Internet Access
+# Day 27: Configuring a Public VPC with an EC2 Instance for Internet Access
 
 ## Task
 

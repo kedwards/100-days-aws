@@ -1,4 +1,4 @@
-# Day 39: Host Static Website on S3
+# Day 39: Hosting a Static Website on AWS S3
 
 ## Task
 

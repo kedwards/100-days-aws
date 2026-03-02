@@ -76,7 +76,7 @@ cluster_arn=$(aws ecs create-cluster \
 # Create ECS Task Execution Role (required for Fargate)
 execution_role_name="${prefix}-ecsTaskExecutionRole"
 
-execution_role_arn=$(aws iam create-role \aws iam create-role \
+execution_role_arn=$(aws iam create-role \
   --role-name $execution_role_name \
   --assume-role-policy-document '{
     "Version": "2012-10-17",

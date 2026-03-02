@@ -1,4 +1,4 @@
-# Day 24 - Create Application Load Balancer
+# Day 24: Setting Up an Application Load Balancer for an EC2 Instance
 
 ## Task
 

@@ -1,4 +1,4 @@
-# Day 37: EC2 to S3 Access with IAM Role
+# Day 37: Managing EC2 Access with S3 Role-based Permissions
 
 ## Task
 

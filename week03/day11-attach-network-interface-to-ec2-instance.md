@@ -1,4 +1,4 @@
-# Day 11 - Attach Network Interface
+# Day 11: Attach Elastic Network Interface to EC2 Instance
 
 ## Task
 
@@ -34,6 +34,10 @@ aws ec2 attach-network-interface \
   --network-interface-id "$eni_id" \
   --instance-id "$instance_id" \
   --device-index 1
+
+aws ec2 describe-network-interfaces --network-interface-ids "$eni_id" \
+  --query "NetworkInterfaces[0].{Status:Status,AttachedTo:Attachment.InstanceId}" \
+  --output table
 ```
 
 </details>

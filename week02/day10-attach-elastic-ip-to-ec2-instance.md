@@ -33,6 +33,10 @@ allocation_id=$(aws ec2 describe-addresses \
 aws ec2 associate-address \
   --allocation-id "$allocation_id" \
   --instance-id "$instance_id"
+
+aws ec2 describe-addresses --allocation-ids "$allocation_id" \
+  --query "Addresses[0].{AllocationId:AllocationId,InstanceId:InstanceId,PublicIp:PublicIp}" \
+  --output table
 ```
 
 </details>

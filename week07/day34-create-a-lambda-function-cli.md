@@ -73,6 +73,10 @@ aws lambda create-function \
   --role $lambda_role_arn
 
 aws lambda wait function-active --function-name $function_name
+
+aws lambda get-function --function-name $function_name \
+  --query "Configuration.{FunctionName:FunctionName,State:State,Runtime:Runtime}" \
+  --output table
 ```
 
 </details>
@@ -89,7 +93,7 @@ aws lambda invoke --function-name $function_name /tmp/lambda-output.json && cat 
 ```
 
 ```bash
-function_name=nautilus-lambda
+function_name=devops-lambda-cli
 role_name=lambda_execution_role
 expected_body='Welcome to KKE AWS Labs!'
 

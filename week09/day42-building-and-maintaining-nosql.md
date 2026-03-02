@@ -42,6 +42,10 @@ aws dynamodb create-table \
 # Wait for table to become active
 aws dynamodb wait table-exists --table-name "$table_name" && echo "Table is active"
 
+aws dynamodb describe-table --table-name "$table_name" \
+  --query "Table.{TableName:TableName,Status:TableStatus,KeySchema:KeySchema[0].AttributeName}" \
+  --output table
+
 # Insert Task 1
 aws dynamodb put-item \
   --table-name "$table_name" \

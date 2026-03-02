@@ -1,4 +1,4 @@
-# Day 05: Create GP3 Volume
+# Day 5: Create GP3 Volume
 
 ## Task
 
@@ -26,6 +26,9 @@ volume_type=gp3
 
 aws ec2 create-volume --volume-type "$volume_type" --availability-zone us-east-1a --size "$volume_size" --tag-specifications "ResourceType=volume,Tags=[{Key=Name,Value=$volume_name}]"
 
+aws ec2 describe-volumes --filters "Name=tag:Name,Values=$volume_name" \
+  --query "Volumes[0].{VolumeId:VolumeId,Size:Size,Type:VolumeType,State:State}" \
+  --output table
 ```
 
 </details>

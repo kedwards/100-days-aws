@@ -1,4 +1,4 @@
-# Day 16 - Create IAM User
+# Day 16: Create IAM User
 
 ## Task
 
@@ -22,6 +22,10 @@ aws iam get-user help
 user_name=iamuser_jim
 
 aws iam create-user --user-name "$user_name"
+
+aws iam get-user --user-name "$user_name" \
+  --query "User.{UserName:UserName,UserId:UserId}" \
+  --output table
 ```
 
 </details>

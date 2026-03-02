@@ -1,4 +1,4 @@
-# Day 29 - Establishing Secure Communication Between Public and Private VPCs via VPC Peering
+# Day 29: Establishing Secure Communication Between Public and Private VPCs via VPC Peering
 
 ## Task
 
@@ -76,6 +76,10 @@ peering_conn_id=$(aws ec2 create-vpc-peering-connection \
   --output text) && echo "Created VPC Peering Connection: $peering_conn_id"
 
 aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id $peering_conn_id
+
+aws ec2 describe-vpc-peering-connections --vpc-peering-connection-ids $peering_conn_id \
+  --query "VpcPeeringConnections[0].{Id:VpcPeeringConnectionId,Status:Status.Code}" \
+  --output table
 
 pub_route_table_id=$(aws ec2 describe-route-tables \
   --filters Name=vpc-id,Values=$default_vpc_id \

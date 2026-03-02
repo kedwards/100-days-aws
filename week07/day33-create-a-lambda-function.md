@@ -75,6 +75,10 @@ aws lambda create-function \
   --role $lambda_role_arn
 
 aws lambda wait function-active --function-name $function_name
+
+aws lambda get-function --function-name $function_name \
+  --query "Configuration.{FunctionName:FunctionName,State:State,Runtime:Runtime}" \
+  --output table
 ```
 
 </details>

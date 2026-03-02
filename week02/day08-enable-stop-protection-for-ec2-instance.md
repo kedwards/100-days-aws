@@ -27,6 +27,12 @@ instance_id=$(aws ec2 describe-instances \
 aws ec2 modify-instance-attribute \
   --disable-api-stop \
   --instance-id "$instance_id"
+
+aws ec2 describe-instance-attribute \
+  --instance-id "$instance_id" \
+  --attribute disableApiStop \
+  --query "DisableApiStop.Value" \
+  --output text
 ```
 
 </details>

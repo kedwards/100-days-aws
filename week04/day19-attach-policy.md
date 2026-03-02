@@ -29,6 +29,10 @@ policy_arn=$(aws iam list-policies \
 aws iam attach-user-policy \
   --user-name "$user_name" \
   --policy-arn "$policy_arn"
+
+aws iam list-attached-user-policies --user-name "$user_name" \
+  --query "AttachedPolicies[].{PolicyName:PolicyName,PolicyArn:PolicyArn}" \
+  --output table
 ```
 
 </details>

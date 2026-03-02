@@ -65,6 +65,10 @@ policy_arn=$(aws iam list-policies \
 aws iam attach-role-policy \
   --role-name "$role_name" \
   --policy-arn "$policy_arn"
+
+aws iam list-attached-role-policies --role-name "$role_name" \
+  --query "AttachedPolicies[].{PolicyName:PolicyName,PolicyArn:PolicyArn}" \
+  --output table
 ```
 
 </details>

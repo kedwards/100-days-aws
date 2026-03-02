@@ -1,4 +1,4 @@
-# Day 21 - Create EC2 Instance and Attach EIP
+# Day 21: Setting Up an EC2 Instance with an Elastic IP for Application Hosting
 
 ## Task
 
@@ -59,6 +59,10 @@ aws ec2 wait instance-running --instance-ids "$instance_id"
 aws ec2 associate-address \
   --allocation-id "$allocation_id" \
   --instance-id "$instance_id"
+
+aws ec2 describe-addresses --allocation-ids "$allocation_id" \
+  --query "Addresses[0].{AllocationId:AllocationId,InstanceId:InstanceId,PublicIp:PublicIp}" \
+  --output table
 ```
 
 </details>

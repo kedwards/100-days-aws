@@ -1,4 +1,4 @@
-# Day 14 - Terminate Instance
+# Day 14: Terminate EC2 Instance
 
 ## Task
 
@@ -38,6 +38,10 @@ if [[ "$termination_protection" == "True" ]]; then
 fi
 
 aws ec2 terminate-instances --instance-ids "$instance_id"
+
+aws ec2 describe-instances --instance-ids "$instance_id" \
+  --query "Reservations[0].Instances[0].{InstanceId:InstanceId,State:State.Name}" \
+  --output table
 ```
 
 </details>

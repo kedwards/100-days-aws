@@ -1,4 +1,4 @@
-# Day 12 - Attach Volume
+# Day 12: Attach Volume to EC2 Instance
 
 ## Task
 
@@ -35,6 +35,10 @@ aws ec2 attach-volume \
   --volume-id "$volume_id" \
   --instance-id "$instance_id" \
   --device "$device_name"
+
+aws ec2 describe-volumes --volume-ids "$volume_id" \
+  --query "Volumes[0].{VolumeId:VolumeId,State:Attachments[0].State,InstanceId:Attachments[0].InstanceId}" \
+  --output table
 ```
 
 </details>

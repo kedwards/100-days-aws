@@ -1,4 +1,4 @@
-# Day 13 - Create AMI from EC2 Instance
+# Day 13: Create AMI from EC2 Instance
 
 ## Task
 

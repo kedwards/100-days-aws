@@ -22,6 +22,9 @@ aws s3api get-bucket-versioning help
 bucket_name=xfusion-s3-31064
 
 aws s3api put-bucket-versioning --bucket $bucket_name --versioning-configuration Status=Enabled
+
+aws s3api get-bucket-versioning --bucket $bucket_name \
+  --query "Status" --output text
 ```
 
 </details>

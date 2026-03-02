@@ -40,7 +40,11 @@ group_id=$(aws ec2 create-security-group \
 
 aws ec2 authorize-security-group-ingress \
   --group-id "$group_id" \
-  --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0}]' 'IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=0.0.0.0/0}]'
+  --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=*******/0}]' 'IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=*******/0}]'
+
+aws ec2 describe-security-group-rules --filters "Name=group-id,Values=$group_id" \
+  --query "SecurityGroupRules[?IsEgress==\`false\`].{Protocol:IpProtocol,FromPort:FromPort,ToPort:ToPort,CIDR:CidrIpv4}" \
+  --output table
 ```
 
 </details>

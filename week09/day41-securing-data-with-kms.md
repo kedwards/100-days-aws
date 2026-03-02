@@ -77,9 +77,9 @@ ls -la /root/EncryptedData.bin
 ```
 
 ```bash
-kms_key_alias=nautilus-KMS-Key
-sensitive_file=/root/SensitiveData.txt
-encrypted_file=/root/EncryptedData.bin
+kms_key_alias=nautilus-kms-key
+sensitive_file=./sensitive.txt
+encrypted_file=./sensitive.bin
 
 # Check if alias exists
 read -r alias_name target_key_id <<< "$(aws kms list-aliases \

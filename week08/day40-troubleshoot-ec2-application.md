@@ -147,7 +147,7 @@ curl -I http://$public_ip
 ```
 
 ```bash
-prefix=xfusion
+prefix=datacenter
 vpc_name=$prefix-vpc
 instance_name=$prefix-ec2
 sg_name=$prefix-sg
