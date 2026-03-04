@@ -32,21 +32,20 @@ aws dynamodb wait help
 prefix=devops
 table_name="$prefix-tasks"
 
-# Create DynamoDB table with taskId as primary key (string type)
+# ── Create DynamoDB table ────────────────────────────────────
 aws dynamodb create-table \
   --table-name "$table_name" \
   --attribute-definitions AttributeName=taskId,AttributeType=S \
   --key-schema AttributeName=taskId,KeyType=HASH \
   --billing-mode PAY_PER_REQUEST && echo "Creating table: $table_name"
 
-# Wait for table to become active
-aws dynamodb wait table-exists --table-name "$table_name" && echo "Table is active"
+aws dynamodb wait table-exists
 
 aws dynamodb describe-table --table-name "$table_name" \
   --query "Table.{TableName:TableName,Status:TableStatus,KeySchema:KeySchema[0].AttributeName}" \
   --output table
 
-# Insert Task 1
+# ── Insert tasks ─────────────────────────────────────────────
 aws dynamodb put-item \
   --table-name "$table_name" \
   --item '{
@@ -55,7 +54,6 @@ aws dynamodb put-item \
     "status": {"S": "completed"}
   }' && echo "Inserted Task 1"
 
-# Insert Task 2
 aws dynamodb put-item \
   --table-name "$table_name" \
   --item '{
@@ -64,7 +62,7 @@ aws dynamodb put-item \
     "status": {"S": "in-progress"}
   }' && echo "Inserted Task 2"
 
-# Verify tasks
+# ── Verify tasks ─────────────────────────────────────────────
 echo "Task 1:"
 aws dynamodb get-item \
   --table-name "$table_name" \

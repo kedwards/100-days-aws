@@ -20,16 +20,19 @@ aws ec2 associate-address help
 instance_name=devops-ec2
 eip_name=devops-ec2-eip
 
+# ── Get instance ID ─────────────────────────────────────────────
 instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
   
+# ── Get Elastic IP allocation ID ────────────────────────────────
 allocation_id=$(aws ec2 describe-addresses \
   --filter "Name=tag:Name,Values=$eip_name" \
   --query "Addresses[].AllocationId" \
   --output text) && echo "Allocation ID: $allocation_id"
 
+# ── Associate Elastic IP with instance ──────────────────────────
 aws ec2 associate-address \
   --allocation-id "$allocation_id" \
   --instance-id "$instance_id"

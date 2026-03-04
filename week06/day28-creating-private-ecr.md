@@ -24,15 +24,16 @@ docker push help
 repository_name=devops-ecr
 region=us-east-1
 
-# Create ECR repository
+# ── Create ECR repository ─────────────────────────────────────
 read -r registry_id repository_uri <<< "$(aws ecr create-repository \
   --repository-name "$repository_name" \
   --query "repository.[registryId,repositoryUri]" \
   --output text)" && echo "Registry ID: $registry_id, Repository URI: $repository_uri"
 
-# Authenticate Docker to ECR
+# ── Authenticate Docker to ECR ────────────────────────────────
 aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$registry_id.dkr.ecr.$region.amazonaws.com"
 
+# ── Create application files ─────────────────────────────────
 mkdir my-app
 
 cat <<EOF > ./my-app/requirements.txt
@@ -52,7 +53,7 @@ COPY . .
 CMD ["python", "app.py"]
 EOF
 
-# Build and push image
+# ── Build and push Docker image ───────────────────────────────
 cd ./my-app
 docker build -t "$repository_uri:latest" .
 docker push "$repository_uri:latest"

@@ -39,6 +39,7 @@ target_group_name="${prefix}-tg"
 min_size=1
 max_size=2
 
+# ── Get VPC and subnets ──────────────────────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
@@ -49,6 +50,7 @@ subnet_ids=$(aws ec2 describe-subnets \
   --query "Subnets[*].SubnetId" \
   --output text) && echo "Subnet IDs: $subnet_ids"
 
+# ── Configure security group ─────────────────────────────────
 security_group_id=$(aws ec2 describe-security-groups \
   --filters "Name=vpc-id,Values=$vpc_id" \
     "Name=group-name,Values=default" \
@@ -61,7 +63,7 @@ aws ec2 authorize-security-group-ingress \
   --port 80 \
   --cidr 0.0.0.0/0
 
-# Amazon Linux 2023 - resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 
+# ── Create launch template ───────────────────────────────────
 amazon_image=resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
 
 cat<<EOF > launch_template.json
@@ -86,6 +88,7 @@ launch_template_id=$(aws ec2 create-launch-template \
   --query "LaunchTemplate.LaunchTemplateId" \
   --output text) && echo "Launch Template ID: $launch_template_id"
 
+# ── Create load balancer ─────────────────────────────────────
 alb_arn=$(aws elbv2 create-load-balancer \
   --name $load_balancer_name \
   --subnets ${subnet_ids} \
@@ -93,6 +96,7 @@ alb_arn=$(aws elbv2 create-load-balancer \
   --query "LoadBalancers[0].LoadBalancerArn" \
   --output text) && echo "ALB ARN: $alb_arn"
 
+# ── Create target group ──────────────────────────────────────
 target_group_arn=$(aws elbv2 create-target-group \
   --name $target_group_name \
   --protocol HTTP \
@@ -102,6 +106,7 @@ target_group_arn=$(aws elbv2 create-target-group \
   --query "TargetGroups[0].TargetGroupArn" \
   --output text) && echo "Target Group ARN: $target_group_arn"
 
+# ── Create Auto Scaling Group ────────────────────────────────
 aws autoscaling create-auto-scaling-group \
   --auto-scaling-group-name "$auto_scaling_group_name" \
   --launch-template LaunchTemplateId=$launch_template_id \
@@ -113,6 +118,7 @@ aws autoscaling create-auto-scaling-group \
   --desired-capacity "$min_size" \
   --vpc-zone-identifier "$(echo "$subnet_ids" | tr '\t ' ',')"
 
+# ── Configure scaling policy ─────────────────────────────────
 cat<<EOF > scaling_policy.json
 {
   "DisableScaleIn": false,
@@ -129,6 +135,7 @@ aws autoscaling put-scaling-policy \
   --policy-type 'TargetTrackingScaling' \
   --target-tracking-configuration file://scaling_policy.json
 
+# ── Create listener and test ─────────────────────────────────
 aws elbv2 create-listener \
   --load-balancer-arn $alb_arn \
   --protocol HTTP \

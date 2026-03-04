@@ -37,24 +37,23 @@ vpc_name=$prefix-vpc
 instance_name=$prefix-ec2
 sg_name=$prefix-sg
 
-# Step 1: Get VPC ID
+# ── Get VPC ID ────────────────────────────────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --filters "Name=tag:Name,Values=$vpc_name" \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
-# Step 2: Check subnets
+# ── Check subnets ─────────────────────────────────────────────
 aws ec2 describe-subnets --filters "Name=vpc-id,Values=$vpc_id" \
   --query "Subnets[].{ID:SubnetId,CIDR:CidrBlock,AZ:AvailabilityZone,MapPublicIP:MapPublicIpOnLaunch}" \
   --output table
 
-# Step 3: Check if Internet Gateway exists and is attached
+# ── Check and create Internet Gateway ─────────────────────────
 igw_id=$(aws ec2 describe-internet-gateways \
   --filters "Name=attachment.vpc-id,Values=$vpc_id" \
   --query "InternetGateways[0].InternetGatewayId" \
   --output text) && echo "Internet Gateway ID: $igw_id"
 
-# If no IGW exists, create and attach one
 if [[ -z "$igw_id" || "$igw_id" == "None" ]]; then
   echo "No Internet Gateway found. Creating one..."
   igw_id=$(aws ec2 create-internet-gateway \
@@ -67,19 +66,17 @@ if [[ -z "$igw_id" || "$igw_id" == "None" ]]; then
     --vpc-id $vpc_id && echo "Attached IGW to VPC"
 fi
 
-# Step 4: Check route tables for route to IGW
+# ── Check and create route to IGW ──────────────────────────────
 route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$vpc_id" \
   --query "RouteTables[0].RouteTableId" \
   --output text) && echo "Route Table ID: $route_table_id"
 
-# Check if route to 0.0.0.0/0 via IGW exists
 igw_route=$(aws ec2 describe-route-tables \
   --route-table-ids $route_table_id \
   --query "RouteTables[0].Routes[?DestinationCidrBlock=='0.0.0.0/0'].GatewayId" \
   --output text) && echo "IGW Route: $igw_route"
 
-# If no route to IGW, create one
 if [[ -z "$igw_route" || "$igw_route" == "None" ]]; then
   echo "No route to Internet Gateway. Creating route..."
   aws ec2 create-route \
@@ -88,13 +85,13 @@ if [[ -z "$igw_route" || "$igw_route" == "None" ]]; then
     --gateway-id $igw_id && echo "Created route to IGW"
 fi
 
-# Step 5: Get EC2 instance details
-read -r instance_id subnet_id public_ip instance_sg <<< "$(aws ec2 describe-instances \
+# ── Get EC2 instance details ──────────────────────────────────
+read -r instance_id subnet_id public_ip instance_sg
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[0].Instances[0].[InstanceId,SubnetId,PublicIpAddress,SecurityGroups[0].GroupId]" \
   --output text)" && echo "Instance: $instance_id, Subnet: $subnet_id, Public IP: $public_ip, SG: $instance_sg"
 
-# Step 6: If no public IP, check subnet auto-assign and allocate EIP if needed
+# ── Allocate Elastic IP if needed ──────────────────────────────
 if [[ -z "$public_ip" || "$public_ip" == "None" ]]; then
   echo "No public IP. Allocating Elastic IP..."
   read -r allocation_id eip <<< "$(aws ec2 allocate-address \
@@ -108,7 +105,7 @@ if [[ -z "$public_ip" || "$public_ip" == "None" ]]; then
   public_ip=$eip
 fi
 
-# Step 7: Verify security group allows port 80
+# ── Verify security group rules ───────────────────────────────
 port_80_rule=$(aws ec2 describe-security-group-rules \
   --filters "Name=group-id,Values=$instance_sg" \
   --query "SecurityGroupRules[?IsEgress==\`false\` && IpProtocol==\`tcp\` && FromPort==\`80\`].SecurityGroupRuleId" \
@@ -123,7 +120,7 @@ if [[ -z "$port_80_rule" || "$port_80_rule" == "None" ]]; then
     --cidr 0.0.0.0/0 && echo "Added port 80 ingress rule"
 fi
 
-# Step 8: Test connectivity
+# ── Test connectivity ─────────────────────────────────────────
 echo "Testing HTTP connectivity to $public_ip..."
 curl -s --connect-timeout 10 "http://$public_ip" | head -5
 ```

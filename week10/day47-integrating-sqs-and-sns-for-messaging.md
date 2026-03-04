@@ -40,7 +40,7 @@ sns_topic_name="$prefix-Priority-Queues-Topic"
 lambda_function_name="$prefix-priorities-queue-function"
 lambda_role_name="lambda_execution_role"
 
-# Create the Lambda function code at /root/index.py
+# ── Create Lambda function code ───────────────────────────────
 cat <<'PYEOF' > /root/index.py
 import boto3
 import os
@@ -73,7 +73,7 @@ def lambda_handler(event, context):
     return response
 PYEOF
 
-# Create the CloudFormation template
+# ── Create CloudFormation template ───────────────────────────
 cat <<'CFEOF' > /root/nautilus-priority-stack.yml
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Priority Queuing with SQS, SNS, and Lambda
@@ -219,24 +219,22 @@ Outputs:
     Value: !GetAtt PrioritiesQueueFunction.Arn
 CFEOF
 
-# Deploy the CloudFormation stack
+# ── Deploy CloudFormation stack ───────────────────────────────
 aws cloudformation create-stack \
   --stack-name "$stack_name" \
   --template-body file:///root/nautilus-priority-stack.yml \
   --capabilities CAPABILITY_NAMED_IAM && echo "Creating stack: $stack_name"
 
-# Wait for stack to complete
 echo "Waiting for stack creation to complete..."
 aws cloudformation wait stack-create-complete \
   --stack-name "$stack_name" && echo "Stack created successfully"
 
-# Get the SNS topic ARN from stack outputs
 sns_topic_arn=$(aws cloudformation describe-stacks \
   --stack-name "$stack_name" \
   --query "Stacks[0].Outputs[?OutputKey=='SNSTopicArn'].OutputValue" \
   --output text) && echo "SNS Topic ARN: $sns_topic_arn"
 
-# Test: Publish 2 high-priority messages
+# ── Publish test messages ────────────────────────────────────
 aws sns publish \
   --topic-arn "$sns_topic_arn" \
   --message "High priority task 1: Deploy critical update" \
@@ -247,7 +245,6 @@ aws sns publish \
   --message "High priority task 2: Fix production bug" \
   --message-attributes '{"priority": {"DataType": "String", "StringValue": "high"}}' && echo "Published high-priority message 2"
 
-# Publish 2 low-priority messages
 aws sns publish \
   --topic-arn "$sns_topic_arn" \
   --message "Low priority task 1: Update documentation" \
@@ -258,18 +255,16 @@ aws sns publish \
   --message "Low priority task 2: Clean up old logs" \
   --message-attributes '{"priority": {"DataType": "String", "StringValue": "low"}}' && echo "Published low-priority message 2"
 
-# Wait for messages to propagate to SQS
 sleep 5
 
-# Invoke Lambda function to process messages (high-priority first)
+# ── Invoke and verify ─────────────────────────────────────────
 aws lambda invoke \
   --function-name "$lambda_function_name" \
   --log-type Tail \
   --query "StatusCode" \
   /tmp/lambda-output.json && echo "Lambda invoked successfully"
 
-# Show Lambda output
-cat /tmp/lambda-output.json | python3 -m json.tool
+cat /tmp/lambda-output.json
 ```
 
 </details>

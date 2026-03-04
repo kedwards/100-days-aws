@@ -32,6 +32,7 @@ function_name=nautilus-lambda
 function_runtime=python3.9
 role_name=lambda_execution_role
 
+# ── Create trust policy document ──────────────────────────────
 cat <<EOF > trust-policy.json
 {
   "Version": "2012-10-17",
@@ -47,6 +48,7 @@ cat <<EOF > trust-policy.json
 }
 EOF
 
+# ── Create Lambda function code ───────────────────────────────
 cat << EOF > lambda_function.py
 import json
 
@@ -59,6 +61,7 @@ EOF
 
 zip lambda-function.zip lambda_function.py
 
+# ── Create IAM role ───────────────────────────────────────────
 aws iam create-role \
   --role-name $role_name \
   --assume-role-policy-document file://trust-policy.json
@@ -67,6 +70,7 @@ lambda_role_arn=$(aws iam list-roles \
   --query "Roles[?RoleName=='lambda_execution_role'].Arn" \
   --output text) && echo "Lambda Arn: $lambda_role_arn"
 
+# ── Create Lambda function ────────────────────────────────────
 aws lambda create-function \
   --function-name $function_name \
   --runtime $function_runtime \

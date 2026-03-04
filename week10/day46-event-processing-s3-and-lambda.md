@@ -46,6 +46,7 @@ lambda_function_runtime="python3.11"
 dynamodb_table_name="$prefix-S3CopyLogs"
 
 
+# ── Create S3 buckets ────────────────────────────────────────
 aws s3api create-bucket \
   --bucket $public_bucket_name \
   --acl public-read \
@@ -59,6 +60,7 @@ aws s3api create-bucket \
   --bucket $private_bucket_name \
   --region us-east-1
 
+# ── Create Lambda function code ───────────────────────────────
 cat <<EOF > trust-policy.json
 {
   "Version": "2012-10-17",
@@ -163,7 +165,7 @@ EOF
 
 zip lambda-function.zip lambda_function.py
 
-# Create DynamoDB table (create early so it's ready when Lambda runs)
+# ── Create DynamoDB table ────────────────────────────────────
 aws dynamodb create-table \
   --table-name "$dynamodb_table_name" \
   --attribute-definitions AttributeName=LogID,AttributeType=S \
@@ -172,8 +174,8 @@ aws dynamodb create-table \
 
 aws dynamodb wait table-exists --table-name "$dynamodb_table_name" && echo "Table is active"
 
-# Get AWS account ID for policy ARNs
-account_id=$(aws sts get-caller-identity --query "Account" --output text) && echo "Account ID: $account_id"
+# ── Create IAM role and policy ───────────────────────────────
+account_id=$(aws sts get-caller-identity --query "Account" --output text)
 
 aws iam create-role \
   --role-name "$lambda_role_name" \
@@ -184,8 +186,6 @@ lambda_role_arn=$(aws iam get-role \
   --query "Role.Arn" \
   --output text) && echo "Role ARN: $lambda_role_arn"
 
-# Create policy granting S3 read on public bucket, S3 write on private bucket,
-# DynamoDB write on the logs table, and CloudWatch Logs
 cat <<EOF > lambda-policy.json
 {
   "Version": "2012-10-17",
@@ -234,7 +234,7 @@ aws iam attach-role-policy \
   --role-name "$lambda_role_name" \
   --policy-arn "$policy_arn" && echo "Attached policy to role"
 
-# Allow time for IAM role propagation
+# ── Create Lambda function ───────────────────────────────────
 sleep 10
 
 aws lambda create-function \
@@ -251,7 +251,7 @@ lambda_function_arn=$(aws lambda get-function \
   --query "Configuration.FunctionArn" \
   --output text) && echo "Lambda Function ARN: $lambda_function_arn"
 
-# Grant S3 permission to invoke the Lambda function
+# ── Configure S3 notification ────────────────────────────────
 aws lambda add-permission \
   --function-name "$lambda_function_name" \
   --statement-id s3-invoke \
@@ -274,16 +274,13 @@ aws s3api put-bucket-notification-configuration \
   --bucket "$public_bucket_name" \
   --notification-configuration file://notification.json && echo "Configured S3 bucket notification"
 
-# Upload test file to trigger the Lambda function
-aws s3 cp /root/sample.zip "s3://$public_bucket_name/sample.zip" && echo "Uploaded sample.zip to public bucket"
+# ── Upload and verify ─────────────────────────────────────────
+aws s3 cp /root/sample.zip "s3://$public_bucket_name/sample.zip"
 
-# Wait for Lambda to process
 sleep 10
 
-# Verify file was copied to private bucket
-aws s3 ls "s3://$private_bucket_name/sample.zip" && echo "✓ File found in private bucket"
+aws s3 ls "s3://$private_bucket_name/sample.zip"
 
-# Verify DynamoDB log entry
 aws dynamodb scan \
   --table-name "$dynamodb_table_name" \
   --query "Items[0].{LogID:LogID.S,Source:SourceBucket.S,Dest:DestinationBucket.S,Key:ObjectKey.S,Status:Status.S}" \

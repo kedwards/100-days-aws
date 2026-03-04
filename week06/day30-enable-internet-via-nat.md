@@ -57,7 +57,7 @@ igw_name=xfusion-igw
 public_rt_name=xfusion-pub-rt
 key_name=xfusion-nat-key
 
-# Get existing VPC ID
+# ── Get existing infrastructure ───────────────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --filters "Name=tag:Name,Values=$vpc_name" \
   --query "Vpcs[0].VpcId" \
@@ -65,19 +65,16 @@ vpc_id=$(aws ec2 describe-vpcs \
 
 aws ec2 describe-vpcs --vpc-ids "$vpc_id" --output table
 
-# Get existing private subnet
 private_subnet_id=$(aws ec2 describe-subnets \
   --filters "Name=tag:Name,Values=$private_subnet_name" "Name=vpc-id,Values=$vpc_id" \
   --query "Subnets[0].SubnetId" \
   --output text) && echo "Private Subnet ID: $private_subnet_id"
 
-# Get private route table (main route table for the VPC)
 private_route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$vpc_id" "Name=association.main,Values=true" \
   --query "RouteTables[0].RouteTableId" \
   --output text) && echo "Private Route Table ID: $private_route_table_id"
 
-# Find available CIDR block for public subnet
 aws ec2 describe-subnets \
   --filters "Name=vpc-id,Values=$vpc_id" \
   --query "Subnets[*].CidrBlock" \
@@ -85,7 +82,7 @@ aws ec2 describe-subnets \
 
 cidr_block=********/24
 
-# Create public subnet
+# ── Create public subnet ──────────────────────────────────────
 public_subnet_id=$(aws ec2 create-subnet \
   --vpc-id "$vpc_id" \
   --cidr-block "$cidr_block" \
@@ -95,12 +92,11 @@ public_subnet_id=$(aws ec2 create-subnet \
 
 aws ec2 describe-subnets --subnet-ids "$public_subnet_id" --output table
 
-# Enable auto-assign public IP for instances launched in this subnet
 aws ec2 modify-subnet-attribute \
   --subnet-id "$public_subnet_id" \
   --map-public-ip-on-launch
 
-# Create and attach Internet Gateway
+# ── Create and attach Internet Gateway ───────────────────────
 igw_id=$(aws ec2 create-internet-gateway \
   --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=$igw_name}]" \
   --query "InternetGateway.InternetGatewayId" \
@@ -112,27 +108,25 @@ aws ec2 attach-internet-gateway \
 
 aws ec2 describe-internet-gateways --internet-gateway-ids "$igw_id" --output table
 
-# Create public route table
+# ── Create public route table ─────────────────────────────────
 public_route_table_id=$(aws ec2 create-route-table \
   --vpc-id "$vpc_id" \
   --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=$public_rt_name}]" \
   --query "RouteTable.RouteTableId" \
   --output text) && echo "Public Route Table ID: $public_route_table_id"
 
-# Add route to Internet Gateway
 aws ec2 create-route \
   --route-table-id "$public_route_table_id" \
   --destination-cidr-block *******/0 \
   --gateway-id "$igw_id"
 
-# Associate public route table with public subnet
 aws ec2 associate-route-table \
   --route-table-id "$public_route_table_id" \
   --subnet-id "$public_subnet_id"
 
 aws ec2 describe-route-tables --route-table-ids "$public_route_table_id" --output table
 
-# Create security group for NAT instance
+# ── Create NAT security group ─────────────────────────────────
 nat_sg_id=$(aws ec2 create-security-group \
   --vpc-id "$vpc_id" \
   --group-name "$nat_sg_name" \
@@ -140,7 +134,6 @@ nat_sg_id=$(aws ec2 create-security-group \
   --query "GroupId" \
   --output text) && echo "NAT Security Group ID: $nat_sg_id"
 
-# Allow all traffic from VPC CIDR (for NAT forwarding)
 vpc_cidr=$(aws ec2 describe-vpcs \
   --vpc-ids "$vpc_id" \
   --query "Vpcs[0].CidrBlock" \
@@ -151,7 +144,6 @@ aws ec2 authorize-security-group-ingress \
   --protocol -1 \
   --cidr "$vpc_cidr"
 
-# Allow SSH from anywhere (optional, for troubleshooting)
 aws ec2 authorize-security-group-ingress \
   --group-id "$nat_sg_id" \
   --protocol tcp \
@@ -160,7 +152,7 @@ aws ec2 authorize-security-group-ingress \
 
 aws ec2 describe-security-groups --group-ids "$nat_sg_id" --output table
 
-# Import SSH key pair
+# ── Import SSH key pair ───────────────────────────────────────
 if [[ ! -f ~/.ssh/id_rsa.pub ]]; then
   ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
 fi
@@ -169,7 +161,7 @@ aws ec2 import-key-pair \
   --key-name "$key_name" \
   --public-key-material fileb://~/.ssh/id_rsa.pub
 
-# Create NAT instance user data script
+# ── Create NAT instance user data ─────────────────────────────
 cat > user-data.sh <<'USERDATA'
 #!/bin/bash
 set -eux
@@ -188,7 +180,7 @@ primary_interface=$(ip route show default | awk '{print $5}')
 service iptables save
 USERDATA
 
-# Launch NAT instance
+# ── Launch NAT instance ───────────────────────────────────────
 nat_instance_id=$(aws ec2 run-instances \
   --image-id resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
   --instance-type "$instance_type" \
@@ -207,12 +199,11 @@ aws ec2 describe-instances --instance-ids "$nat_instance_id" \
   --query "Reservations[].Instances[].{Name:Tags[?Key=='Name']|[0].Value,State:State.Name,InstanceId:InstanceId,PublicIp:PublicIpAddress}" \
   --output table
 
-# Disable source/destination check for NAT
+# ── Configure NAT routing ─────────────────────────────────────
 aws ec2 modify-instance-attribute \
   --instance-id "$nat_instance_id" \
   --no-source-dest-check
 
-# Add route in private route table to NAT instance
 aws ec2 create-route \
   --route-table-id "$private_route_table_id" \
   --destination-cidr-block *******/0 \
@@ -220,7 +211,7 @@ aws ec2 create-route \
 
 aws ec2 describe-route-tables --route-table-ids "$private_route_table_id" --output table
 
-# Allow outbound traffic on default security group
+# ── Configure default security group egress ──────────────────
 default_security_group_id=$(aws ec2 describe-security-groups \
   --filters "Name=group-name,Values=default" "Name=vpc-id,Values=$vpc_id" \
   --query "SecurityGroups[0].GroupId" \
@@ -231,13 +222,12 @@ aws ec2 authorize-security-group-egress \
   --protocol -1 \
   --cidr *******/0 2>/dev/null || echo "Egress rule already exists"
 
-# Wait for cron job to upload test file to S3
+# ── Verify internet access ────────────────────────────────────
 echo "Waiting for cron job to upload test file to S3..."
 sleep 120
 
 aws s3 ls "s3://${s3_bucket_name}/" && echo "✓ Test file found in S3 bucket"
 
-# Cleanup
 rm -f user-data.sh
 ```
 

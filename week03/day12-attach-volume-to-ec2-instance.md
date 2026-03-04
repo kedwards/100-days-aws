@@ -21,16 +21,19 @@ instance_name=xfusion-ec2
 volume_name=xfusion-volume
 device_name=/dev/sdb
 
+# ── Get instance details ────────────────────────────────────────
 read -r instance_id az <<< "$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].[InstanceId,Placement.AvailabilityZone]" \
   --output text)" && echo "Instance ID: $instance_id, AZ: $az"
 
+# ── Get volume ID ───────────────────────────────────────────────
 volume_id=$(aws ec2 describe-volumes \
   --filters "Name=tag:Name,Values=$volume_name" "Name=availability-zone,Values=$az" \
   --query "Volumes[].VolumeId" \
   --output text) && echo "Volume ID: $volume_id"
 
+# ── Attach volume to instance ───────────────────────────────────
 aws ec2 attach-volume \
   --volume-id "$volume_id" \
   --instance-id "$instance_id" \

@@ -47,6 +47,7 @@ nat_gateway_name="${prefix}-natgw"
 ec2_instance_name="${prefix}-priv-ec2"
 s3_bucket_name="${prefix}-nat-16554"
 
+# ── Get VPC and private subnet ───────────────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --filters "Name=tag:Name,Values=$vpc_name" \
   --query "Vpcs[0].VpcId" \
@@ -58,13 +59,12 @@ private_subnet_id=$(aws ec2 describe-subnets \
   --query "Subnets[0].SubnetId" \
   --output text) && echo "Private Subnet ID: $private_subnet_id"
 
-# Get VPC CIDR to determine available subnet range
 vpc_cidr=$(aws ec2 describe-vpcs \
   --vpc-ids "$vpc_id" \
   --query "Vpcs[0].CidrBlock" \
   --output text) && echo "VPC CIDR: $vpc_cidr"
 
-# Create public subnet (using next available /24 in VPC range)
+# ── Create public subnet ─────────────────────────────────────
 public_subnet_id=$(aws ec2 create-subnet \
   --vpc-id "$vpc_id" \
   --cidr-block "${vpc_cidr%.*}.1/24" \
@@ -72,6 +72,7 @@ public_subnet_id=$(aws ec2 create-subnet \
   --query "Subnet.SubnetId" \
   --output text) && echo "Public Subnet ID: $public_subnet_id"
 
+# ── Create and attach Internet Gateway ───────────────────────
 igw_id=$(aws ec2 create-internet-gateway \
   --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value='${prefix}-igw'}]" \
   --query "InternetGateway.InternetGatewayId" \
@@ -81,6 +82,7 @@ aws ec2 attach-internet-gateway \
   --vpc-id "$vpc_id" \
   --internet-gateway-id "$igw_id" && echo "Attached IGW to VPC"
 
+# ── Create public route table ─────────────────────────────────
 public_route_table_id=$(aws ec2 create-route-table \
   --vpc-id "$vpc_id" \
   --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value='$public_route_table_name'}]" \
@@ -96,6 +98,7 @@ aws ec2 associate-route-table \
   --route-table-id "$public_route_table_id" \
   --subnet-id "$public_subnet_id" && echo "Associated route table with public subnet"
 
+# ── Allocate EIP and create NAT Gateway ──────────────────────
 allocation_id=$(aws ec2 allocate-address \
   --domain vpc \
   --query "AllocationId" \
@@ -108,11 +111,10 @@ nat_gateway_id=$(aws ec2 create-nat-gateway \
   --query "NatGateway.NatGatewayId" \
   --output text) && echo "NAT Gateway ID: $nat_gateway_id"
 
-# Wait for NAT Gateway to be available
 echo "Waiting for NAT Gateway to become available..."
 aws ec2 wait nat-gateway-available --nat-gateway-ids "$nat_gateway_id" && echo "NAT Gateway is available"
 
-# Get private route table (the one without IGW route)
+# ── Update private route table ───────────────────────────────
 private_route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$vpc_id" \
   --query "RouteTables[?!Routes[?starts_with(GatewayId, 'igw-')]].RouteTableId" \
@@ -128,11 +130,10 @@ aws ec2 create-route \
   --destination-cidr-block 0.0.0.0/0 \
   --nat-gateway-id "$nat_gateway_id" && echo "Created route to NAT Gateway"
 
-# Wait a few minutes for the cron job to upload the test file
 echo "Waiting for cron job to upload test file to S3..."
 sleep 180
 
-# Verify the test file exists in S3
+# ── Verify internet access ───────────────────────────────────
 echo "Checking S3 bucket for test file:"
 aws s3 ls "s3://${s3_bucket_name}/" && echo "✓ Test file found in S3 bucket"
 ```

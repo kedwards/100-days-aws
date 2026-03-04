@@ -27,10 +27,12 @@ aws ec2 describe-security-group-rules help
 group_name="nautilus-sg"
 description="Security group for Nautilus App Servers"
 
+# ── Get default VPC ─────────────────────────────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[?IsDefault].VpcId" \
   --output text) && echo "Default VPC ID: $vpc_id"
 
+# ── Create security group ───────────────────────────────────────
 group_id=$(aws ec2 create-security-group \
   --description "$description" \
   --group-name "$group_name" \
@@ -38,6 +40,7 @@ group_id=$(aws ec2 create-security-group \
   --query GroupId \
   --output text) && echo "Created Security Group ID: $group_id"
 
+# ── Add inbound rules ───────────────────────────────────────────
 aws ec2 authorize-security-group-ingress \
   --group-id "$group_id" \
   --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=*******/0}]' 'IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=*******/0}]'

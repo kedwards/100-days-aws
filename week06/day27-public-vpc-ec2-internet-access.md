@@ -38,6 +38,7 @@ region=us-east-1
 instance_type=t2.micro
 instance_name=datacenter-pub-ec2
 
+# ── Generate SSH key and import key pair ─────────────────────
 if [[ ! -f ~/.ssh/id_rsa.pub ]]; then
   ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
 fi
@@ -47,12 +48,14 @@ aws ec2 import-key-pair \
   --public-key-material fileb://~/.ssh/id_rsa.pub \
   --region "$region"
 
+# ── Create VPC ────────────────────────────────────────────────
 vpc_id=$(aws ec2 create-vpc \
   --cidr-block 10.0.0.0/16 \
   --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=$vpc_name}]" \
   --query "Vpc.VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
+# ── Create and attach Internet Gateway ───────────────────────
 igw_id=$(aws ec2 create-internet-gateway \
   --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=my-igw}]" \
   --query "InternetGateway.InternetGatewayId" \
@@ -62,6 +65,7 @@ aws ec2 attach-internet-gateway \
   --vpc-id "$vpc_id" \
   --internet-gateway-id "$igw_id"
 
+# ── Configure route table ─────────────────────────────────────
 route_table_id=$(aws ec2 describe-route-tables \
   --filters "Name=vpc-id,Values=$vpc_id" \
   --query "RouteTables[0].RouteTableId" \
@@ -72,6 +76,7 @@ aws ec2 create-route \
   --destination-cidr-block '0.0.0.0/0' \
   --gateway-id $igw_id
 
+# ── Create public subnet ──────────────────────────────────────
 subnet_id=$(aws ec2 create-subnet \
   --vpc-id $vpc_id \
   --cidr-block 10.0.0.0/24 \
@@ -81,6 +86,7 @@ subnet_id=$(aws ec2 create-subnet \
 
 aws ec2 modify-subnet-attribute --subnet-id $subnet_id --map-public-ip-on-launch
 
+# ── Create security group ─────────────────────────────────────
 security_group_id=$(aws ec2 create-security-group \
   --group-name MySecurityGroup \
   --description "My security group" \
@@ -94,13 +100,15 @@ aws ec2 authorize-security-group-ingress \
   --port 22 \
   --cidr 0.0.0.0/0
 
+# ── Get Amazon Linux AMI ──────────────────────────────────────
 image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
-  --filters 'Name=name,Values=al2023-ami-2023.*-x86_64' \
+  --filters 'Name=name,Values=al2023-ami-2023.*-x86_64'
   --query 'reverse(sort_by(Images, &CreationDate))[:1] | [0].ImageId' \
   --output text) && echo "Image ID: $image_id"
 
+# ── Launch EC2 instance ───────────────────────────────────────
 aws ec2 run-instances \
   --image-id \
     resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \

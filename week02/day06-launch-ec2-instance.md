@@ -31,10 +31,12 @@ instance_name=nautilus-ec2
 instance_type=t2.micro
 region=us-east-1
 
+# ── Create key pair ─────────────────────────────────────────────
 aws ec2 create-key-pair --key-name "$key_name" \
   --key-type "$key_type" \
   --tag-specifications "ResourceType=key-pair,Tags=[{Key=Name,Value=$key_name}]"
 
+# ── Get latest Amazon Linux AMI ─────────────────────────────────
 image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
@@ -42,10 +44,12 @@ image_id=$(aws ec2 describe-images \
   --query 'reverse(sort_by(Images, &CreationDate))[:1] | [0].ImageId' \
   --output text) && echo "Image ID: $image_id"
 
+# ── Get default security group ──────────────────────────────────
 default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default security group: $default_sg"
 
+# ── Launch EC2 instance ─────────────────────────────────────────
 instance_id=$(aws ec2 run-instances \
   --image-id "$image_id" \
   --instance-type "$instance_type" \

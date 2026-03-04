@@ -19,14 +19,17 @@ aws ec2 create-subnet help
 ```bash
 subnet_name=devops-subnet
 
-read -r vpc_id cidr_block <<< "$(aws ec2 describe-vpcs \
+# ── Get default VPC ─────────────────────────────────────────────
+read -r vpc_id cidr_block
     --query "Vpcs[?IsDefault].[VpcId,CidrBlock]" \
     --output text)" && echo "VPC ID: $vpc_id, CIDR Block: $cidr_block"
 
+# ── List existing subnets ───────────────────────────────────────
 aws ec2 describe-subnets \
   --filters "Name=vpc-id,Values=$vpc_id" \
   --query "Subnets[*].CidrBlock"
 
+# ── Create subnet ───────────────────────────────────────────────
 aws ec2 create-subnet \
   --vpc-id "$vpc_id" \
   --cidr-block ***********/20 \

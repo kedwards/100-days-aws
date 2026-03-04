@@ -34,11 +34,13 @@ bucket_name=$prefix-web-26069
 region=us-east-1
 s3_url="http://$bucket_name.s3-website-$region.amazonaws.com"
 
+# ── Create S3 bucket ──────────────────────────────────────────
 aws s3api create-bucket \
   --bucket $bucket_name \
   --acl public-read \
   --region us-east-1
 
+# ── Configure public access ───────────────────────────────────
 aws s3api put-public-access-block \
   --bucket "$bucket_name" \
   --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
@@ -64,6 +66,7 @@ aws s3api put-bucket-policy \
   --policy "$policy"
 
 
+# ── Configure website hosting ─────────────────────────────────
 cat <<EOF > website.json
 {
   "IndexDocument": {
@@ -76,10 +79,9 @@ aws s3api put-bucket-website \
   --bucket $bucket_name \
   --website-configuration file://website.json
 
-# Upload index.html to the bucket
+# ── Upload and test ───────────────────────────────────────────
 aws s3 cp /root/index.html s3://$bucket_name/index.html
 
-# Test the website
 echo "Website URL: $s3_url"
 curl $s3_url
 

@@ -27,6 +27,7 @@ prefix=nautilus
 cluster_name="$prefix-eks"
 role_name="eksClusterRole"
 
+# ── Get VPC and subnets ──────────────────────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --filters "Name=isDefault,Values=true" \
   --query "Vpcs[0].VpcId" \
@@ -39,6 +40,7 @@ subnet_ids=$(aws ec2 describe-subnets \
     "Name=default-for-az,Values=true" \
   --query "Subnets[].SubnetId" \
   --output text | tr '\t' ',') && echo "Subnet IDs: $subnet_ids"
+# ── Create IAM role ──────────────────────────────────────────
 cat <<EOF > eks-trust-policy.json
 {
   "Version": "2012-10-17",
@@ -66,14 +68,14 @@ role_arn=$(aws iam create-role \
 aws iam attach-role-policy --role-name "$role_name" \
   --policy-arn arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
 
+# ── Create EKS cluster ──────────────────────────────────────
 aws eks create-cluster \
   --name "$cluster_name" \
   --role-arn "$role_arn" \
   --resources-vpc-config subnetIds="$subnet_ids",endpointPrivateAccess=true,endpointPublicAccess=false \
   && echo "Creating EKS cluster: $cluster_name"
 
-# Wait for cluster to become active (takes ~10-15 minutes)
-aws eks wait cluster-active --name "$cluster_name" && echo "Cluster is now active"
+aws eks wait cluster-active
 ```
 
 </details>

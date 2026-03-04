@@ -39,22 +39,21 @@ alb_name=datacenter-alb
 tg_name=datacenter-tg
 sg_name=datacenter-sg
 
+# ── Get VPC and instance details ──────────────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[?IsDefault].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
-# Get instance ID
 instance_id=$(aws ec2 describe-instances \
   --filter "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[*].Instances[*].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
 
-# Get default security group
 default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default SG: $default_sg"
 
-# Create security group for ALB
+# ── Create ALB security group ─────────────────────────────────
 alb_sg=$(aws ec2 create-security-group \
   --group-name "$sg_name" \
   --description "Security group for $alb_name" \
@@ -62,21 +61,20 @@ alb_sg=$(aws ec2 create-security-group \
   --query "GroupId" \
   --output text) && echo "ALB SG: $alb_sg"
 
-# Allow HTTP traffic to ALB
+# ── Configure security group rules ─────────────────────────────
 aws ec2 authorize-security-group-ingress \
   --group-id "$alb_sg" \
   --protocol tcp \
   --port 80 \
-  --cidr 0.0.0.0/0
+  --cidr *******/0
 
-# Allow ALB to communicate with instance
 aws ec2 authorize-security-group-ingress \
   --group-id "$default_sg" \
   --protocol tcp \
   --port 80 \
   --source-group "$alb_sg"
 
-# Create target group
+# ── Create target group and register instance ─────────────────
 tg_arn=$(aws elbv2 create-target-group \
   --name "$tg_name" \
   --protocol HTTP \
@@ -86,18 +84,16 @@ tg_arn=$(aws elbv2 create-target-group \
   --query "TargetGroups[0].TargetGroupArn" \
   --output text) && echo "Target group created: $tg_arn"
 
-# Register instance to target group
 aws elbv2 register-targets \
   --target-group-arn "$tg_arn" \
   --targets "Id=$instance_id,Port=80"
 
-# Get subnets for ALB (need at least 2 in different AZs)
+# ── Create Application Load Balancer ───────────────────────────
 read -r subnet1 subnet2 <<< "$(aws ec2 describe-subnets \
   --filters "Name=vpc-id,Values=$vpc_id" \
   --query "Subnets[0:2].SubnetId" \
   --output text)" && echo "Subnets: $subnet1, $subnet2"
 
-# Create Application Load Balancer
 alb_arn=$(aws elbv2 create-load-balancer \
   --name "$alb_name" \
   --security-groups "$alb_sg" \
@@ -108,7 +104,7 @@ alb_arn=$(aws elbv2 create-load-balancer \
 aws elbv2 wait load-balancer-exists \
   --load-balancer-arns "$alb_arn" && echo "ALB is now available"
 
-# Create listener
+# ── Create listener ───────────────────────────────────────────
 aws elbv2 create-listener \
   --load-balancer-arn "$alb_arn" \
   --protocol HTTP \

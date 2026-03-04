@@ -33,15 +33,15 @@ source_bucket=datacenter-s3-source
 destination_bucket=datacenter-sync-bucket
 region=us-east-1
 
-# Create destination bucket
+# ── Create destination bucket ─────────────────────────────────
 aws s3api create-bucket \
   --bucket "$destination_bucket" \
   --region "$region"
 
-# Sync buckets
+# ── Sync buckets ──────────────────────────────────────────────
 aws s3 sync s3://"$source_bucket"/ s3://"$destination_bucket"/
 
-# Verify bucket contents match
+# ── Verify bucket contents ────────────────────────────────────
 echo "Source:"
 aws s3 ls s3://"$source_bucket"/ --recursive
 echo "Destination:"

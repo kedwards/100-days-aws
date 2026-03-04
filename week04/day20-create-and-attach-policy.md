@@ -31,7 +31,7 @@ aws iam list-attached-role-policies help
 role_name=iamrole_rose
 policy_name=iampolicy_rose
 
-# Create trust policy document
+# ── Create trust policy document ──────────────────────────────
 cat > /tmp/trust-policy.json << 'POLICY'
 {
   "Version": "2012-10-17",
@@ -51,21 +51,22 @@ cat > /tmp/trust-policy.json << 'POLICY'
 }
 POLICY
 
-# Create the role
+# ── Create IAM role ───────────────────────────────────────────
 aws iam create-role \
   --role-name "$role_name" \
   --assume-role-policy-document file:///tmp/trust-policy.json
 
-# Get policy ARN
+# ── Get policy ARN ────────────────────────────────────────────
 policy_arn=$(aws iam list-policies \
   --query "Policies[?PolicyName=='$policy_name'].Arn" \
   --output text) && echo "Policy ARN: $policy_arn"
 
-# Attach policy to role
+# ── Attach policy to role ─────────────────────────────────────
 aws iam attach-role-policy \
   --role-name "$role_name" \
   --policy-arn "$policy_arn"
 
+# ── List attached policies ────────────────────────────────────
 aws iam list-attached-role-policies --role-name "$role_name" \
   --query "AttachedPolicies[].{PolicyName:PolicyName,PolicyArn:PolicyArn}" \
   --output table

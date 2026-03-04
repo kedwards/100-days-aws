@@ -46,10 +46,12 @@ db_master_password=password
 db_storage_type="gp2"
 ec2_instance_name=$prefix-ec2
 
+# ── Get VPC details ──────────────────────────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "VPC ID: $vpc_id"
 
+# ── Create route table and subnets ─────────────────────────────
 db_route_table_id=$(aws ec2 create-route-table \
   --vpc-id $vpc_id \
   --query "RouteTable.RouteTableId" \
@@ -83,6 +85,7 @@ for subnet_id in "${subnet_ids[@]}"; do
     --subnet-id $subnet_id
 done
 
+# ── Create DB subnet group ────────────────────────────────────
 db_subnet_group_name=$(aws rds create-db-subnet-group \
   --db-subnet-group-name DevOpsDBSubnetGroup \
   --db-subnet-group-description "Subnet group for DevOps RDS instance" \
@@ -90,6 +93,7 @@ db_subnet_group_name=$(aws rds create-db-subnet-group \
   --query "DBSubnetGroup.DBSubnetGroupName" \
   --output text) && echo "Created DB Subnet Group: $db_subnet_group_name"
 
+# ── Configure security groups ─────────────────────────────────
 read db_security_group_id < <(aws ec2 create-security-group \
   --group-name DbSecurityGroup \
   --description "Database security group" \
@@ -123,6 +127,7 @@ aws ec2 authorize-security-group-ingress \
   --group-id $ec2_security_group_id \
   --ip-permissions "IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0}]" "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=0.0.0.0/0}]"
 
+# ── Create RDS instance ───────────────────────────────────────
 aws rds create-db-instance \
   --db-name $db_name \
   --db-instance-identifier $db_instance_identifier \
@@ -136,36 +141,33 @@ aws rds create-db-instance \
   --storage-type $db_storage_type \
   --vpc-security-group-ids $db_security_group_id
 
+# ── Generate SSH key ──────────────────────────────────────────
 if [[ ! -f ~/.ssh/id_rsa ]]; then
   ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N "" -q
 fi
-
-# add public key to ec2 machine via console
 cat ~/.ssh/id_rsa.pub
 
+# ── Wait for RDS and get endpoint ──────────────────────────────
 aws rds wait db-instance-available --db-instance-identifier $db_instance_identifier
 
-# Get the RDS endpoint
 db_endpoint=$(aws rds describe-db-instances \
   --db-instance-identifier $db_instance_identifier \
   --query "DBInstances[0].Endpoint.Address" \
   --output text) && echo "RDS Endpoint: $db_endpoint"
 
-# Update index.php with database connection details
+# ── Deploy application to EC2 ─────────────────────────────────
 sed -i \
   -e "s|<dbname>|${db_name}|g" \
   -e "s|<dbuser>|${db_master_username}|g" \
   -e "s|<dbpass>|${db_master_password}|g" \
   -e "s|<dbhost>|${db_endpoint}|g" index.php
 
-# Get EC2 public IP
 public_ip_address=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$ec2_instance_name" \
   --query "Reservations[0].Instances[0].PublicIpAddress" \
   --output text) && echo "Public IP: $public_ip_address"
 
-# Copy index.php to EC2 instance
-scp -i ~/.ssh/id_rsa index.php root@$public_ip_address:~/
+scp -i ~/.ssh/id_rsa
 ssh -i ~/.ssh/id_rsa root@$public_ip_address "sudo mv ~/index.php /var/www/html/index.php"
 
 curl http://$public_ip_address/index.php

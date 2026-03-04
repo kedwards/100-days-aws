@@ -55,11 +55,13 @@ json_file="taskdef.json"
 service_name="$prefix-service"
 execution_role_name="${prefix}-ecsTaskExecutionRole"
 
+# ── Create ECR repository ─────────────────────────────────────
 read -r repository_uri registry_id <<< "$(aws ecr create-repository \
   --repository-name "$repository_name" \
   --query "repository.[repositoryUri,registryId]" \
   --output text)" && echo "Repository URI: $repository_uri, Registry ID: $registry_id"
 
+# ── Build and push Docker image ───────────────────────────────
 cd pyapp
 
 docker build -t "$repository_uri:latest" .
@@ -68,12 +70,13 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 
 docker push "$repository_uri:latest"
 
+# ── Create ECS cluster ───────────────────────────────────────
 cluster_arn=$(aws ecs create-cluster \
   --cluster-name "$cluster_name" \
   --query "cluster.clusterArn" \
   --output text) && echo "Cluster ARN: $cluster_arn"
 
-# Create ECS Task Execution Role (required for Fargate)
+# ── Create ECS task execution role ─────────────────────────────
 execution_role_name="${prefix}-ecsTaskExecutionRole"
 
 execution_role_arn=$(aws iam create-role \
@@ -96,6 +99,7 @@ aws iam attach-role-policy \
 
 sleep 10
 
+# ── Create task definition ────────────────────────────────────
 cat << EOF > $json_file
 {
   "family": "${prefix}-taskdefinition",
@@ -128,6 +132,7 @@ task_definition_arn=$(aws ecs register-task-definition \
   --query "taskDefinition.taskDefinitionArn" \
   --output text) && echo "Task Definition ARN: $task_definition_arn"
 
+# ── Configure networking ──────────────────────────────────────
 default_security_group_id=$(aws ec2 describe-security-groups \
   --filters "Name=group-name,Values=default" \
   --query "SecurityGroups[0].GroupId" \
@@ -143,6 +148,7 @@ subnet_id=$(aws ec2 describe-subnets \
    --query Subnets[0].SubnetId \
   --output text) && echo "Subnet ID: $subnet_id"
 
+# ── Create ECS service ───────────────────────────────────────
 aws ecs create-service \
   --cluster $cluster_name \
   --service-name $service_name \
@@ -152,6 +158,7 @@ aws ecs create-service \
   --platform-version LATEST \
   --network-configuration "awsvpcConfiguration={subnets=[$subnet_id],securityGroups=[$default_security_group_id],assignPublicIp=ENABLED}"
 
+# ── Get public IP and test ────────────────────────────────────
 eni_id=$(aws ecs describe-tasks \
     --cluster $cluster_name \
     --tasks $task_definition_arn \

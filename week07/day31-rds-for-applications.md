@@ -31,6 +31,7 @@ db_engine_version=8.4
 db_instance_class=db.t3.micro
 db_max_storage=50
 
+# ── Create RDS instance ───────────────────────────────────────
 aws rds create-db-instance \
   --engine $db_engine \
   --engine-version $db_engine_version \
@@ -42,9 +43,10 @@ aws rds create-db-instance \
   --max-allocated-storage $db_max_storage
 
 
+# ── Wait and verify ───────────────────────────────────────────
 aws rds wait db-instance-available --db-instance-identifier $db_name
 
-aws rds describe-db-instances --db-instance-identifier $db_name --query "DBInstances[].DBInstanceStatus"
+aws rds describe-db-instances
 ```
 
 </details>

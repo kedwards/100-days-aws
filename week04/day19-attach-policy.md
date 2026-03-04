@@ -22,14 +22,17 @@ aws iam list-attached-user-policies help
 user_name=iamuser_john
 policy_name=iampolicy_john
 
+# ── Get policy ARN ────────────────────────────────────────────
 policy_arn=$(aws iam list-policies \
   --query "Policies[?PolicyName=='$policy_name'].Arn" \
   --output text) && echo "Policy ARN: $policy_arn"
 
+# ── Attach policy to user ─────────────────────────────────────
 aws iam attach-user-policy \
   --user-name "$user_name" \
   --policy-arn "$policy_arn"
 
+# ── List attached policies ────────────────────────────────────
 aws iam list-attached-user-policies --user-name "$user_name" \
   --query "AttachedPolicies[].{PolicyName:PolicyName,PolicyArn:PolicyArn}" \
   --output table

@@ -57,6 +57,7 @@ load_balancer_name="$prefix-alb"
 target_group_name="$prefix-tg"
 region=us-east-1
 
+# ── Get VPC and default security group ───────────────────────
 vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[].VpcId" \
   --output text) && echo "Vpc Id: $vpc_id"
@@ -66,6 +67,7 @@ default_sg_id=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default Security Group Id: $default_sg_id"
 
+# ── Configure security groups ─────────────────────────────────
 aws ec2 authorize-security-group-ingress \
   --group-id $default_sg_id \
   --protocol tcp \
@@ -90,8 +92,9 @@ aws ec2 authorize-security-group-ingress \
   --protocol tcp \
   --port 80 \
   --source-group $ec2_security_group_id
-
+# ── Prepare user data script ──────────────────────────────────
 # Ubuntu 24.04 - resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+ubuntu_image=resolve:ssm:
 ubuntu_image=resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
 
 # Amazon Linux 2023 - resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 
@@ -125,6 +128,7 @@ fi
 
 echo "Using $app_type application with $([ "$app_type" = "php" ] && echo "$web_server" || echo "nginx")"
 
+# ── Launch EC2 instance ───────────────────────────────────────
 instance_id=$(aws ec2 run-instances \
   --image-id $ubuntu_image \
   --instance-type "$instance_type" \
@@ -137,6 +141,7 @@ instance_id=$(aws ec2 run-instances \
 
 aws ec2 wait instance-running --instance-ids "$instance_id"
 
+# ── Create Application Load Balancer ───────────────────────────
 subnets=$(aws ec2 describe-subnets \
   --filter Name=vpc-id,Values="$vpc_id" \
   --query "Subnets[].SubnetId" \
@@ -149,6 +154,7 @@ alb_arn=$(aws elbv2 create-load-balancer \
   --query "LoadBalancers[0].LoadBalancerArn" \
   --output text) && echo "ALB ARN: $alb_arn"
 
+# ── Create target group and listener ───────────────────────────
 target_group_arn=$(aws elbv2 create-target-group \
   --name $target_group_name \
   --protocol HTTP \
@@ -164,6 +170,7 @@ aws elbv2 create-listener \
   --port 80 \
   --default-actions Type=forward,TargetGroupArn=$target_group_arn
 
+# ── Register targets ──────────────────────────────────────────
 alb_dns_name=$(aws elbv2 describe-load-balancers \
   --query "LoadBalancers[?LoadBalancerName=='$load_balancer_name'].DNSName" \
   --output text) && echo "ALB DNS: $alb_dns_name"

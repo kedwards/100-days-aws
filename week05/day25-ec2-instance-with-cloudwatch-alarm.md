@@ -37,6 +37,7 @@ alarm_metric=CPUUtilization
 alarm_statistic=Average
 alarm_topic=xfusion-sns-topic
 
+# ── Create SNS topic and subscribe ─────────────────────────────
 alarm_topic_arn=$(aws sns create-topic \
   --name xfusion-sns-topic \
   --query "TopicArn" \
@@ -49,6 +50,7 @@ aws sns subscribe \
   --attributes '{}' \
   --return-subscription-arn
 
+# ── Create user data script ───────────────────────────────────
 cat <<'EOF' > user-data.sh
 #!/bin/bash
 set -eux
@@ -61,9 +63,10 @@ for i in $(seq 1 "$CORES"); do
 done
 EOF
 
+# ── Launch EC2 instance ───────────────────────────────────────
 #
 # Ubuntu 24.04 - resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
-# Amazon Linux 2023 - resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 
+# Amazon Linux 2023 - resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
 #
 aws ec2 run-instances \
   --image-id \
@@ -73,6 +76,7 @@ aws ec2 run-instances \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value="$instance_name"}]" \
   --user-data file://user-data.sh
 
+# ── Create CloudWatch alarm ───────────────────────────────────
 sns_topic_arn=$(aws sns list-topics \
   --query "Topics[?contains(TopicArn, '$alarm_topic')].TopicArn" \
   --output text) && echo "SNS Topic ARN: $sns_topic_arn"

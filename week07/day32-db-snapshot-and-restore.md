@@ -32,12 +32,14 @@ db_snapshot_identifier=devops-snapshot
 db_instance_restore_name=devops-snapshot-restore
 db_instance_size=db.t3.micro
 
+# ── Create DB snapshot ────────────────────────────────────────
 aws rds create-db-snapshot \
   --db-instance-identifier $db_instance_name \
   --db-snapshot-identifier $db_snapshot_identifier
 
 aws rds wait db-snapshot-available --db-snapshot-identifier $db_snapshot_identifier
 
+# ── Restore from snapshot ─────────────────────────────────────
 aws rds restore-db-instance-from-db-snapshot \
   --db-instance-identifier $db_instance_restore_name \
   --db-snapshot-identifier $db_snapshot_identifier \

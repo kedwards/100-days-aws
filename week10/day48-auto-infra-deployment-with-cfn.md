@@ -30,7 +30,7 @@ stack_name="$prefix-lambda-app"
 lambda_function_name="$prefix-lambda"
 lambda_role_name="lambda_execution_role"
 
-# Create the CloudFormation template
+# ── Create CloudFormation template ───────────────────────────
 cat <<'CFEOF' > /root/devops-lambda.yml
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Deploy a Lambda function that returns Welcome to KKE AWS Labs!
@@ -75,26 +75,24 @@ Outputs:
     Value: !GetAtt LambdaExecutionRole.Arn
 CFEOF
 
-# Deploy the CloudFormation stack
+# ── Deploy CloudFormation stack ───────────────────────────────
 aws cloudformation create-stack \
   --stack-name "$stack_name" \
   --template-body file:///root/devops-lambda.yml \
   --capabilities CAPABILITY_NAMED_IAM && echo "Creating stack: $stack_name"
 
-# Wait for stack to complete
 echo "Waiting for stack creation to complete..."
 aws cloudformation wait stack-create-complete \
   --stack-name "$stack_name" && echo "Stack created successfully"
 
-# Invoke the Lambda function to verify
+# ── Invoke and verify ─────────────────────────────────────────
 aws lambda invoke \
   --function-name "$lambda_function_name" \
   --log-type Tail \
   --query "StatusCode" \
   /tmp/lambda-output.json && echo "Lambda invoked successfully"
 
-# Show Lambda output
-cat /tmp/lambda-output.json | python3 -m json.tool
+cat /tmp/lambda-output.json
 ```
 
 </details>

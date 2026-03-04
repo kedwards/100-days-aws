@@ -30,24 +30,22 @@ ec2_instance_name="${prefix}-ec2"
 expanded_volume_size=12
 key_pair_path="/root/${prefix}-keypair.pem"
 
-# Get the volume ID attached to the instance
+# ── Get instance details ─────────────────────────────────────
 volume_id=$(aws ec2 describe-instances \
   --filter Name=tag:Name,Values="$ec2_instance_name" \
   --query 'Reservations[0].Instances[0].BlockDeviceMappings[0].Ebs.VolumeId' \
   --output text) && echo "Volume ID: $volume_id"
 
-# Get the public IP for SSH access
 public_ip=$(aws ec2 describe-instances \
   --filter Name=tag:Name,Values="$ec2_instance_name" \
   --query 'Reservations[0].Instances[0].PublicIpAddress' \
   --output text) && echo "Public IP: $public_ip"
 
-# Expand the volume from 8 GiB to 12 GiB
+# ── Expand volume ────────────────────────────────────────────
 aws ec2 modify-volume \
   --volume-id "$volume_id" \
   --size $expanded_volume_size && echo "Volume modification initiated"
 
-# Wait for the volume modification to complete
 while true; do
   state=$(aws ec2 describe-volumes-modifications \
     --volume-ids "$volume_id" \
@@ -58,8 +56,8 @@ while true; do
   sleep 5
 done
 
-# SSH into the instance and grow the partition and filesystem
-ssh -o StrictHostKeyChecking=no -i "$key_pair_path" ec2-user@"$public_ip" << 'EOF'
+# ── Grow filesystem ──────────────────────────────────────────
+ssh -o StrictHostKeyChecking=no
   # Grow the partition to use all available space
   sudo growpart /dev/xvda 1
 

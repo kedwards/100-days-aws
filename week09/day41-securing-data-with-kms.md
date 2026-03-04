@@ -32,32 +32,30 @@ sensitive_file=/root/SensitiveData.txt
 encrypted_file=/root/EncryptedData.bin
 decrypted_file=/root/DecryptedData.txt
 
-# Create the KMS key
+# ── Create KMS key ───────────────────────────────────────────
 kms_key_id=$(aws kms create-key \
   --description "Nautilus KMS Key for data encryption" \
   --query "KeyMetadata.KeyId" \
   --output text) && echo "KMS Key ID: $kms_key_id"
 
-# Create an alias for the key
+# ── Create key alias ─────────────────────────────────────────
 aws kms create-alias \
   --alias-name "alias/$kms_key_alias" \
   --target-key-id "$kms_key_id" && echo "Created alias: alias/$kms_key_alias"
 
-# Encrypt the file - KMS returns base64-encoded ciphertext
-# Save as binary by decoding the base64 output
+# ── Encrypt the file ─────────────────────────────────────────
 aws kms encrypt \
   --key-id "$kms_key_id" \
   --plaintext "fileb://$sensitive_file" \
   --query "CiphertextBlob" \
   --output text | base64 --decode > "$encrypted_file" && echo "Encrypted to: $encrypted_file"
 
-# Decrypt the file to verify
+# ── Decrypt and verify ───────────────────────────────────────
 aws kms decrypt \
   --ciphertext-blob "fileb://$encrypted_file" \
   --query "Plaintext" \
   --output text | base64 --decode > "$decrypted_file" && echo "Decrypted to: $decrypted_file"
-
-# Verify decrypted content matches original
+if diff -q
 if diff -q "$sensitive_file" "$decrypted_file" > /dev/null 2>&1; then
   echo "✓ Decrypted data matches original file"
 else

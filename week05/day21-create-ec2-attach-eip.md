@@ -29,7 +29,7 @@ eip_name=nautilus-eip
 instance_type=t2.micro
 region=us-east-1
 
-# Get latest Amazon Linux 2023 AMI
+# ── Get latest Amazon Linux AMI ────────────────────────────────
 image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
@@ -37,7 +37,7 @@ image_id=$(aws ec2 describe-images \
   --query 'reverse(sort_by(Images, &CreationDate))[:1] | [0].ImageId' \
   --output text) && echo "Image ID: $image_id"
 
-# Create EC2 instance
+# ── Create EC2 instance ───────────────────────────────────────
 instance_id=$(aws ec2 run-instances \
   --image-id "$image_id" \
   --instance-type "$instance_type" \
@@ -46,16 +46,15 @@ instance_id=$(aws ec2 run-instances \
   --query "Instances[0].InstanceId" \
   --output text) && echo "Instance ID: $instance_id"
 
-# Allocate Elastic IP
+# ── Allocate Elastic IP ───────────────────────────────────────
 allocation_id=$(aws ec2 allocate-address \
   --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=$eip_name}]" \
   --query "AllocationId" \
   --output text) && echo "Allocation ID: $allocation_id"
 
-# Wait for instance to be running
+# ── Wait and associate EIP with instance ──────────────────────
 aws ec2 wait instance-running --instance-ids "$instance_id"
 
-# Associate EIP with instance
 aws ec2 associate-address \
   --allocation-id "$allocation_id" \
   --instance-id "$instance_id"

@@ -62,17 +62,20 @@ instance_name=$prefix-ec2
 bucket_name=$prefix-s3-17577
 role_name=$prefix-role
 
+# ── Generate SSH key ──────────────────────────────────────────
 if [[ ! -f ~/.ssh/id_rsa ]]; then
   ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
 fi
 
 cat ~/.ssh/id_rsa.pub
 
+# ── Create S3 bucket ──────────────────────────────────────────
 aws s3api create-bucket \
   --bucket $bucket_name \
   --acl private \
   --object-ownership BucketOwnerEnforced
 
+# ── Create IAM role and policy ─────────────────────────────────
 role_arn=$(aws iam create-role \
   --role-name $role_name \
   --assume-role-policy-document '{
@@ -143,6 +146,7 @@ aws iam attach-role-policy \
   --role-name $role_name \
   --policy-arn $policy_arn
 
+# ── Create instance profile ───────────────────────────────────
 instance_profile_arn=$(aws iam create-instance-profile \
   --instance-profile-name $role_name \
   --query 'InstanceProfile.Arn' \
@@ -152,6 +156,7 @@ aws iam add-role-to-instance-profile \
   --instance-profile-name $role_name \
   --role-name $role_name
 
+# ── Associate profile with EC2 ─────────────────────────────────
 read -r public_ip instance_id <<< "$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=$instance_name" \
   --query "Reservations[].Instances[].[PublicIpAddress,InstanceId]" \

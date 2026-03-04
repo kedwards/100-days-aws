@@ -59,6 +59,7 @@ peer_conn_name=datacenter-vpc-peering
 private_vpc_name=datacenter-private-vpc
 
 
+# ── Get VPC IDs ───────────────────────────────────────────────
 default_vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[?IsDefault].VpcId" \
   --output text) && echo "Default VPC ID: $default_vpc_id"
@@ -68,6 +69,7 @@ private_vpc_id=$(aws ec2 describe-vpcs \
   --query "Vpcs[0].VpcId" \
   --output text) && echo "Private VPC ID: $private_vpc_id"
 
+# ── Create and accept VPC peering connection ─────────────────
 peering_conn_id=$(aws ec2 create-vpc-peering-connection \
   --vpc-id $default_vpc_id \
   --peer-vpc-id $private_vpc_id \
@@ -81,6 +83,7 @@ aws ec2 describe-vpc-peering-connections --vpc-peering-connection-ids $peering_c
   --query "VpcPeeringConnections[0].{Id:VpcPeeringConnectionId,Status:Status.Code}" \
   --output table
 
+# ── Configure route tables for peering ───────────────────────
 pub_route_table_id=$(aws ec2 describe-route-tables \
   --filters Name=vpc-id,Values=$default_vpc_id \
   --query RouteTables[].RouteTableId \
@@ -101,6 +104,7 @@ aws ec2 create-route \
   --destination-cidr-block 172.31.0.0/16 \
   --vpc-peering-connection-id $peering_conn_id
 
+# ── Configure security group rules ─────────────────────────────
 public_security_group_id=$(aws ec2 describe-instances --filters Name=tag:Name,Values=$public_ec2_name --query Reservations[0].Instances[0].SecurityGroups[].GroupId --output text) && echo "Public Security Group Id: $public_security_group_id"
 
 aws ec2 authorize-security-group-ingress \
@@ -117,6 +121,7 @@ aws ec2 authorize-security-group-ingress \
   --port -1 \
   --cidr 0.0.0.0/0
 
+# ── Connect and test ──────────────────────────────────────────
 public_ip=$(aws ec2 describe-instances --filters Name=tag:Name,Values=$public_ec2_name --query Reservations[0].Instances[0].PublicIpAddress --output text) && echo "Public ip: $public_ip"
 
 ssh -i ~/.ssh/id_rsa ec2-user@$public_ip

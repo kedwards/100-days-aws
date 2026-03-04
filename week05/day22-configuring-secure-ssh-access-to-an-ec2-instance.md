@@ -26,30 +26,30 @@ instance_name=nautilus-ec2
 instance_type=t2.micro
 region=us-east-1
 
-# Generate SSH key if not exists
+# ── Generate SSH key ──────────────────────────────────────────
 if [[ ! -f ~/.ssh/id_rsa.pub ]]; then
   ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
 fi
 
-# Import key pair
+# ── Import key pair ───────────────────────────────────────────
 aws ec2 import-key-pair \
   --key-name "$key_name" \
   --public-key-material fileb://~/.ssh/id_rsa.pub \
   --region "$region"
 
-# Get default security group
+# ── Get default security group ────────────────────────────────
 default_sg=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?GroupName=='default'].GroupId" \
   --output text) && echo "Default security group: $default_sg"
 
-# Add SSH rule to default security group
+# ── Add SSH rule to security group ────────────────────────────
 aws ec2 authorize-security-group-ingress \
   --group-id "$default_sg" \
   --protocol tcp \
   --port 22 \
   --cidr *******/0
 
-# Get latest Amazon Linux 2023 AMI
+# ── Get latest Amazon Linux AMI ────────────────────────────────
 image_id=$(aws ec2 describe-images \
   --region "$region" \
   --owners amazon \
@@ -57,7 +57,7 @@ image_id=$(aws ec2 describe-images \
   --query 'reverse(sort_by(Images, &CreationDate))[:1] | [0].ImageId' \
   --output text) && echo "Image ID: $image_id"
 
-# Launch instance
+# ── Launch EC2 instance ───────────────────────────────────────
 aws ec2 run-instances \
   --image-id "$image_id" \
   --instance-type "$instance_type" \

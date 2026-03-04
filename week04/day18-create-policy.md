@@ -21,7 +21,7 @@ aws iam list-policies help
 ```bash
 policy_name=iampolicy_kirsty
 
-# Create policy document for read-only EC2 console access
+# ── Create policy document ────────────────────────────────────
 cat > /tmp/policy.json << 'POLICY'
 {
     "Version": "2012-10-17",
@@ -39,10 +39,12 @@ cat > /tmp/policy.json << 'POLICY'
 }
 POLICY
 
+# ── Create IAM policy ─────────────────────────────────────────
 aws iam create-policy \
   --policy-name "$policy_name" \
   --policy-document file:///tmp/policy.json
 
+# ── List local policies ───────────────────────────────────────
 aws iam list-policies --scope Local \
   --query "Policies[?PolicyName=='$policy_name'].{PolicyName:PolicyName,Arn:Arn}" \
   --output table
