@@ -1,7 +1,7 @@
-# 100 Days of AWS - Project Documentation
+# 100 Days Challenges - Project Documentation
 
 ## Overview
-This repository contains solutions and exercises for KodeKloud's 50 Days of AWS challenge, completed by the DevOps team. Each day's task focuses on practical AWS CLI skills covering EC2, IAM, S3, VPC, RDS, and other core AWS services.
+This repository contains solutions and exercises for KodeKloud's 100 Days challenges, completed by the DevOps team. The repo is organized into separate challenge tracks.
 
 ## Project Structure
 ```
@@ -12,13 +12,20 @@ This repository contains solutions and exercises for KodeKloud's 50 Days of AWS 
 ├── week04/          # Days 16-20: IAM users, groups, policies, roles
 ├── week05/          # Days 21-25: EC2 with EIP, SSH access, S3 sync, ALB, CloudWatch
 ├── week06/          # Days 26-30: Nginx, public VPC, ECR, VPC peering, NAT instances
-├── week07/          # Days 31+: RDS, advanced topics
+├── week07/          # Days 31-35: RDS, advanced topics
+├── week08/          # Days 36-40: S3 lifecycle, CloudFront, static websites, troubleshooting
+├── week09/          # Days 41-45: KMS, DynamoDB, EKS, Auto Scaling, NAT Gateway
+├── week10/          # Days 46-50: Lambda, SQS/SNS, CloudFormation, VPC peering, storage
+├── template.md      # Standard template for all day files
+└── README.md        # Project readme
+
+100-days-devops/
 ├── template.md      # Standard template for all day files
 └── README.md        # Project readme
 ```
 
 ## Day File Format
-All day files must follow the template structure in `template.md`:
+All day files must follow the template structure in the respective `template.md`:
 
 ### Required Sections
 1. **Title**: `# Day XX - Task Title`
@@ -65,7 +72,7 @@ fi
 - Inconsistent naming conventions within the same file
 
 ## Running Solutions
-1. Ensure AWS CLI is configured with appropriate credentials
+1. Ensure the relevant CLI tools are configured with appropriate credentials
 2. Copy the code block from the Solution section
 3. Paste into terminal (commands are designed for copy-paste execution)
 4. Run the Validate section to confirm success
@@ -73,7 +80,7 @@ fi
 ## Testing
 Test scripts are located in the same week directory as the day file:
 - Format: `dayXX-test.sh`
-- Run with: `bash weekXX/dayXX-test.sh`
+- Run with: `bash 100-days-aws/weekXX/dayXX-test.sh` or `bash 100-days-devops/weekXX/dayXX-test.sh`
 
 ## AWS Region
-Unless otherwise specified, all resources are created in `us-east-1`.
+Unless otherwise specified, all AWS resources are created in `us-east-1`.
